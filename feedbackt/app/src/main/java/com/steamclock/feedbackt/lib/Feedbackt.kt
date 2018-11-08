@@ -5,24 +5,17 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Environment
 import android.view.View
 import android.widget.Toast
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.io.OutputStream
 import android.os.Build
 import android.util.Log
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
-import androidx.core.content.ContextCompat.startActivity
-import androidx.core.content.FileProvider
+import com.steamclock.feedbackt.lib.activities.EditFeedbacktActivity
+import com.steamclock.feedbackt.lib.extensions.convertToBitmap
 
-import com.steamclock.feedbackt.R
+import com.steamclock.feedbackt.lib.extensions.saveAsPng
 
 
 /**
@@ -41,49 +34,32 @@ object Feedbackt {
         requestStoragePermissions(activity)
 
         activity.window?.decorView?.rootView?.let { rootView ->
-            generateAndSendScreenshot(activity, rootView)
+            grabFeedbackAndEdit(activity, rootView)
         } ?: run {
             // Problem.
         }
     }
 
-    // -------------------------
-    private fun generateAndSendScreenshot(context: Context, view: View) {
+    fun grabFeedbackAndEmail(context: Context, view: View) {
+        grabFeedbackAndRun(context, view, ::emailBitmap)
+    }
+
+    fun grabFeedbackAndEdit(context: Context, view: View) {
+        grabFeedbackAndRun(context, view, ::launchEdit)
+    }
+
+    fun grabFeedbackAndView(context: Context, view: View) {
+        grabFeedbackAndRun(context, view, ::viewBitmap)
+    }
+
+    private fun grabFeedbackAndRun(context: Context, view: View, runThis: (context: Context, uri: Uri) -> Unit) {
         val bitmap = view.convertToBitmap()
-        saveBitmapToFile(context, bitmap)?.let { uri ->
-            Log.v(TAG, "generateAndSendScreenshot, with uri: $uri")
-            emailBitmap(context, uri)
-            //viewBitmap(context, uri)
+        bitmap.saveAsPng(context, "feedbackt.png")?.let { uri ->
+            runThis(context, uri)
         } ?: run {
             Log.e(TAG, "generateAndSendScreenshot failed")
             // todo error
         }
-    }
-
-    private fun saveBitmapToFile(context: Context, bitmap: Bitmap): Uri? {
-        val path = Environment.getExternalStorageDirectory().toString()
-        val file = File(path, "feedbackt.jpg")
-
-        try {
-            val stream: OutputStream = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-            stream.flush()
-            stream.close()
-        } catch (e: IOException) {
-            Log.e(TAG, "saveBitmapToFile failed")
-            e.printStackTrace()
-            return null
-        }
-
-        // Supporting Nougat and up, we need to run our URIs through a FileProvider.
-        val providerAuth = context.getString(R.string.file_provider_authority)
-        val resultUri = FileProvider.getUriForFile(context, providerAuth, file)
-
-        // Return the saved image path to uri
-        return resultUri
-
-        // Old method Return the saved image path to uri
-        //return Uri.parse(file.absolutePath)
     }
 
     private fun emailBitmap(context: Context, uri: Uri) {
@@ -96,6 +72,11 @@ object Feedbackt {
         emailIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         context.startActivity(Intent.createChooser(emailIntent, "Send email"))
+    }
+
+    private fun launchEdit(context: Context, uri: Uri) {
+        val launchIntent = EditFeedbacktActivity.newIntent(context, uri)
+        context.startActivity(launchIntent)
     }
 
     private fun viewBitmap(context: Context, uri: Uri) {
@@ -115,4 +96,5 @@ object Feedbackt {
             }
         }
     }
+
 }

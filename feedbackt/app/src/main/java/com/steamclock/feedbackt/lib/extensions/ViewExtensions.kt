@@ -1,4 +1,4 @@
-package com.steamclock.feedbackt.lib
+package com.steamclock.feedbackt.lib.extensions
 
 import android.graphics.Bitmap
 import android.graphics.Canvas

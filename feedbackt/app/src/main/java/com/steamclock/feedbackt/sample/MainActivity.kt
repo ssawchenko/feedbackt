@@ -17,6 +17,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getFeedbackt() {
-        Feedbackt.grabFeedback(this)
+        Feedbackt.grabFeedbackAndEdit(this)
     }
 }

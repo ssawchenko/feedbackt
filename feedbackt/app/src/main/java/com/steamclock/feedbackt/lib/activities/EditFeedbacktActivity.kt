@@ -8,6 +8,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity;
 import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.lib.Constants
+import com.steamclock.feedbackt.lib.Feedbackt
 
 import kotlinx.android.synthetic.main.activity_edit_feedbackt.*
 import kotlinx.android.synthetic.main.content_edit_feedbackt.*
@@ -42,7 +43,7 @@ class EditFeedbacktActivity : AppCompatActivity() {
     }
 
     private fun sendEdited() {
-
+        Feedbackt.grabFeedbackAndEmail(this)
     }
 
     //---------------------------------------------------

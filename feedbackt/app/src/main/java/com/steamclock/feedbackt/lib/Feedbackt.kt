@@ -6,15 +6,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.view.View
-import android.widget.Toast
 import android.os.Build
 import android.util.Log
+import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.steamclock.feedbackt.lib.activities.EditFeedbacktActivity
 import com.steamclock.feedbackt.lib.extensions.convertToBitmap
-
 import com.steamclock.feedbackt.lib.extensions.saveAsPng
 
 
@@ -24,38 +22,37 @@ import com.steamclock.feedbackt.lib.extensions.saveAsPng
 object Feedbackt {
 
     private val TAG = "Feedbackt"
-
     private val email = "shayla@steamclock.com"
     private val emailTitle = "Sending feedback"
 
-    fun grabFeedback(activity: Activity) {
-        Toast.makeText(activity, "Hello from Feedbackt2", Toast.LENGTH_SHORT).show()
+    //-------------------------------
+    // Public
+    //-------------------------------
+    fun grabFeedbackAndEmail(activity: Activity, view: View? = getRootView(activity)) {
+        grabFeedbackAndRun(activity, view, ::emailBitmap)
+    }
 
+    fun grabFeedbackAndEdit(activity: Activity, view: View? = getRootView(activity)) {
+        grabFeedbackAndRun(activity, view, ::launchEdit)
+    }
+
+    fun grabFeedbackAndView(activity: Activity, view: View? = getRootView(activity)) {
+        grabFeedbackAndRun(activity, view, ::viewBitmap)
+    }
+
+    //-------------------------------
+    // Private
+    //-------------------------------
+    private fun getRootView(activity: Activity): View? {
+        return activity.window?.decorView?.rootView
+    }
+
+    private fun grabFeedbackAndRun(activity: Activity, view: View?, runThis: (context: Context, uri: Uri) -> Unit) {
         requestStoragePermissions(activity)
 
-        activity.window?.decorView?.rootView?.let { rootView ->
-            grabFeedbackAndEdit(activity, rootView)
-        } ?: run {
-            // Problem.
-        }
-    }
-
-    fun grabFeedbackAndEmail(context: Context, view: View) {
-        grabFeedbackAndRun(context, view, ::emailBitmap)
-    }
-
-    fun grabFeedbackAndEdit(context: Context, view: View) {
-        grabFeedbackAndRun(context, view, ::launchEdit)
-    }
-
-    fun grabFeedbackAndView(context: Context, view: View) {
-        grabFeedbackAndRun(context, view, ::viewBitmap)
-    }
-
-    private fun grabFeedbackAndRun(context: Context, view: View, runThis: (context: Context, uri: Uri) -> Unit) {
-        val bitmap = view.convertToBitmap()
-        bitmap.saveAsPng(context, "feedbackt.png")?.let { uri ->
-            runThis(context, uri)
+        val bitmap = view?.convertToBitmap()
+        bitmap?.saveAsPng(activity, "feedbackt.png")?.let { uri ->
+            runThis(activity, uri)
         } ?: run {
             Log.e(TAG, "generateAndSendScreenshot failed")
             // todo error

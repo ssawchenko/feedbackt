@@ -17,7 +17,6 @@ class FingerPaintView @JvmOverloads constructor(context: Context,
     private val mBitmapPaint: Paint
     private var mPaint: Paint
 
-
     private var mX: Float = 0.toFloat()
     private var mY: Float = 0.toFloat()
 

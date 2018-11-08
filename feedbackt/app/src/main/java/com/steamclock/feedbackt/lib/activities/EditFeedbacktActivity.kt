@@ -40,6 +40,7 @@ class EditFeedbacktActivity : AppCompatActivity() {
     private fun setupCanvas() {
         bottom_actions.visibility = View.VISIBLE
         send_it_button.setOnClickListener { sendEdited() }
+        undo_button.setOnClickListener { fingerpaint_view.undoLast() }
     }
 
     private fun sendEdited() {

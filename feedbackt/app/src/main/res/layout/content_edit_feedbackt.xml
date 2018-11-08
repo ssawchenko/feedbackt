@@ -16,11 +16,11 @@
         android:background="@color/colorAccent">
         
         <ImageView
-            android:id="@+id/mode_free_draw"
+            android:id="@+id/undo_button"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
-            android:src="@android:drawable/ic_media_play"/>
+            />
 
     </LinearLayout>
 

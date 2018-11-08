@@ -5,7 +5,8 @@ import android.graphics.*
 import android.view.MotionEvent
 import android.util.AttributeSet
 import android.view.View
-import android.widget.RelativeLayout
+import java.lang.Exception
+import java.util.*
 
 class FingerPaintView @JvmOverloads constructor(context: Context,
                                           attrs: AttributeSet? = null,
@@ -13,9 +14,12 @@ class FingerPaintView @JvmOverloads constructor(context: Context,
 
     private var mBitmap: Bitmap? = null
     private var mCanvas: Canvas? = null
-    private var mPath: Path
+    //private var mPath: Path
+    private var nextPath: Path? = null
     private val mBitmapPaint: Paint
     private var mPaint: Paint
+
+    private var paths = LinkedList<Path>()
 
     private var mX: Float = 0.toFloat()
     private var mY: Float = 0.toFloat()
@@ -30,8 +34,21 @@ class FingerPaintView @JvmOverloads constructor(context: Context,
         mPaint.setStrokeCap(Paint.Cap.ROUND)
         mPaint.setStrokeWidth(12f)
 
-        mPath = Path()
+        //mPath = Path()
+
         mBitmapPaint = Paint(Paint.DITHER_FLAG)
+
+        setWillNotDraw(false)
+    }
+
+    fun undoLast() {
+        try {
+            paths.removeLast()
+        } catch (e: Exception) {
+            // shhhhhhhh, it's ok.
+        }
+
+        invalidate()
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -40,36 +57,63 @@ class FingerPaintView @JvmOverloads constructor(context: Context,
         mCanvas = Canvas(mBitmap)
     }
 
+    private fun generateFullPath(): Path {
+        val result = Path()
+        paths.forEach { result.addPath(it) }
+        return result
+    }
+
     override fun onDraw(canvas: Canvas) {
         //canvas.drawColor(-0x555556)
         canvas.drawColor(Color.TRANSPARENT)
-        canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
-        canvas.drawPath(mPath, mPaint)
+        //canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
+        //canvas.drawPath(mPath, mPaint)
+        canvas.drawPath(generateFullPath(), mPaint)
     }
 
-    private fun touch_start(x: Float, y: Float) {
-        mPath.reset()
-        mPath.moveTo(x, y)
-        mX = x
-        mY = y
-    }
-
-    private fun touch_move(x: Float, y: Float) {
-        val dx = Math.abs(x - mX)
-        val dy = Math.abs(y - mY)
-        if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
-            mPath.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2)
+    private fun onTouchStart(x: Float, y: Float) {
+        nextPath = Path()
+        nextPath?.let {
+            it.reset()
+            it.moveTo(x, y)
             mX = x
             mY = y
+            paths.add(it)
         }
     }
 
-    private fun touch_up() {
-        mPath.lineTo(mX, mY)
-        // commit the path to our offscreen
-        mCanvas!!.drawPath(mPath, mPaint)
-        // kill this so we don't double draw
-        mPath.reset()
+    private fun onTouchMove(x: Float, y: Float) {
+        nextPath?.let {
+            val dx = Math.abs(x - mX)
+            val dy = Math.abs(y - mY)
+            if (dx >= TOUCH_TOLERANCE || dy >= TOUCH_TOLERANCE) {
+                it.quadTo(mX, mY, (x + mX) / 2, (y + mY) / 2)
+                mX = x
+                mY = y
+            }
+            updateNextPath()
+        }
+    }
+
+    // left off trying to force a canvas redraw.
+
+    private fun onTouchUp() {
+        nextPath?.let {
+            it.lineTo(mX, mY)
+            // commit the path to our offscreen
+            mCanvas!!.drawPath(it, mPaint)
+            // kill this so we don't double draw
+            //it.reset()
+            updateNextPath()
+        }
+        nextPath = null
+    }
+
+    private fun updateNextPath() {
+        nextPath?.let {
+            paths.removeLast()
+            paths.add(it)
+        }
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -78,15 +122,15 @@ class FingerPaintView @JvmOverloads constructor(context: Context,
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                touch_start(x, y)
+                onTouchStart(x, y)
                 invalidate()
             }
             MotionEvent.ACTION_MOVE -> {
-                touch_move(x, y)
+                onTouchMove(x, y)
                 invalidate()
             }
             MotionEvent.ACTION_UP -> {
-                touch_up()
+                onTouchUp()
                 invalidate()
             }
         }

@@ -2,10 +2,15 @@ package com.steamclock.feedbackt.sample
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.res.ResourcesCompat
 import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.lib.Feedbackt
 
 import kotlinx.android.synthetic.main.activity_main.*
+import com.leinardi.android.speeddial.SpeedDialActionItem
+import com.leinardi.android.speeddial.SpeedDialView
+
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -13,10 +18,37 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
-        fab.setOnClickListener { _ -> getFeedbackt() }
+
+        val speedDialView = findViewById<SpeedDialView>(R.id.speedDial)
+        speedDialView.addActionItem(SpeedDialActionItem.Builder(R.id.fab_edit, R.drawable.baseline_edit_white_48)
+            .setLabel("Edit")
+            .create())
+        speedDialView.addActionItem(SpeedDialActionItem.Builder(R.id.fab_email, R.drawable.baseline_email_white_48)
+            .setLabel("Email")
+            .create())
+
+        speedDialView.setOnActionSelectedListener { speedDialActionItem ->
+            when (speedDialActionItem.id) {
+                R.id.fab_email -> {
+                    Feedbackt.grabFeedbackAndEmail(this)
+                    false
+                }
+                R.id.fab_edit -> {
+                    Feedbackt.grabFeedbackAndEdit(this)
+                    false
+                }
+                else -> true
+            }
+        }
+
     }
 
-    private fun getFeedbackt() {
-        Feedbackt.grabFeedbackAndEdit(this)
-    }
+
+
+//    .setFabBackgroundColor(ResourcesCompat.getColor(getResources(), R.color.material_white_1000, getTheme()))
+//    .setFabImageTintColor(ResourcesCompat.getColor(getResources(), R.color.inbox_primary, getTheme()))
+//    .setLabel(getString(R.string.label_custom_color))
+//    .setLabelColor(Color.WHITE)
+//    .setLabelBackgroundColor(ResourcesCompat.getColor(getResources(), R.color.inbox_primary, getTheme()))
+//    .setLabelClickable(false)
 }

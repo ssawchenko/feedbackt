@@ -34,6 +34,7 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:$constraintLayout"
 
     implementation "com.kaopiz:kprogresshud:1.2.0"
+    implementation "com.leinardi.android:speed-dial:2.0.0"
 
     // Networking
     implementation "com.squareup.retrofit2:retrofit:$retrofit"

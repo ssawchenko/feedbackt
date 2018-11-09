@@ -5,12 +5,17 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
+import androidx.core.content.res.ResourcesCompat
+import com.kaopiz.kprogresshud.KProgressHUD
+import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.lib.activities.EditFeedbacktActivity
 import com.steamclock.feedbackt.lib.extensions.convertToBitmap
 import com.steamclock.feedbackt.lib.extensions.saveAsPng
@@ -24,6 +29,7 @@ object Feedbackt {
     private val TAG = "Feedbackt"
     private val email = "shayla@steamclock.com"
     private val emailTitle = "Sending feedback"
+    private var commonHud: KProgressHUD? = null
 
     //-------------------------------
     // Public
@@ -40,6 +46,30 @@ object Feedbackt {
         grabFeedbackAndRun(activity, view, ::viewBitmap)
     }
 
+    fun showHud(activity: Activity, text: Any? = null) {
+        hideHud()
+        commonHud = KProgressHUD.create(activity)
+            .setStyle(KProgressHUD.Style.SPIN_INDETERMINATE)
+            .setCancellable(true)
+            .setAnimationSpeed(2)
+            .setBackgroundColor(ContextCompat.getColor(activity, R.color.colorAccent))
+            .setDimAmount(0.5f)
+
+        text?.let {
+            if (it is String) {
+                commonHud?.setLabel(it)
+            }
+            if (it is Int) {
+                commonHud?.setLabel(activity.getString(it))
+            }
+        }
+        commonHud?.show()
+    }
+
+    fun hideHud() {
+        commonHud?.dismiss()
+    }
+
     //-------------------------------
     // Private
     //-------------------------------
@@ -50,10 +80,26 @@ object Feedbackt {
     private fun grabFeedbackAndRun(activity: Activity, view: View?, runThis: (context: Context, uri: Uri) -> Unit) {
         requestStoragePermissions(activity)
 
-        val bitmap = view?.convertToBitmap()
+        view?.post {
+            showHud(activity, "Generating...")
+            val bitmap = view?.convertToBitmap()
+            bitmap?.saveAsPng(activity, "feedbackt.png")?.let { uri ->
+                hideHud()
+                runThis(activity, uri)
+            } ?: run {
+                hideHud()
+                Log.e(TAG, "generateAndSendScreenshot failed")
+                // todo error
+            }
+        }
+    }
+
+    fun emailBitmap(activity: Activity, bitmap: Bitmap) {
         bitmap?.saveAsPng(activity, "feedbackt.png")?.let { uri ->
-            runThis(activity, uri)
+            hideHud()
+            emailBitmap(activity, uri)
         } ?: run {
+            hideHud()
             Log.e(TAG, "generateAndSendScreenshot failed")
             // todo error
         }

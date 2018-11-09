@@ -22,9 +22,13 @@ class MainActivity : AppCompatActivity() {
         val speedDialView = findViewById<SpeedDialView>(R.id.speedDial)
         speedDialView.addActionItem(SpeedDialActionItem.Builder(R.id.fab_edit, R.drawable.baseline_edit_white_48)
             .setLabel("Edit")
+            .setLabelColor(resources.getColor(android.R.color.white))
+            .setLabelBackgroundColor(resources.getColor(R.color.colorAccent))
             .create())
         speedDialView.addActionItem(SpeedDialActionItem.Builder(R.id.fab_email, R.drawable.baseline_email_white_48)
             .setLabel("Email")
+            .setLabelBackgroundColor(resources.getColor(R.color.colorAccent))
+            .setLabelColor(resources.getColor(android.R.color.white))
             .create())
 
         speedDialView.setOnActionSelectedListener { speedDialActionItem ->

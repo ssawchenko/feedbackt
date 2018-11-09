@@ -2,6 +2,6 @@
 <bitmap xmlns:android="http://schemas.android.com/apk/res/android"
     android:src="@drawable/checker"
     android:tileMode="repeat"
-    android:alpha="0.7">
+    android:alpha="0.3">
 
 </bitmap>

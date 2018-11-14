@@ -16,6 +16,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import com.steamclock.feedbackt.lib.Feedbackt
+import com.steamclock.feedbackt.lib.extensions.convertToBitmapWithKnownSize
 
 
 class EditFeedbacktActivity : AppCompatActivity() {
@@ -67,8 +68,10 @@ class EditFeedbacktActivity : AppCompatActivity() {
 
     private fun sendEdited() {
         val view = findViewById<View>(R.id.edited_image_layout)
-        //Feedbackt.grabFeedbackAndEmail(this, view)
-        sendBitmapWithKnownSize(edited_image_layout, width ?: 0, height ?: 0)
+        Feedbackt.grabFeedbackAndEmail(this, view)
+
+//        val bitmap = edited_image_layout.convertToBitmapWithKnownSize(width ?: 0, height ?: 0)
+//        Feedbackt.emailBitmap(this, bitmap)
     }
 
     /**

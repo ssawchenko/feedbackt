@@ -13,12 +13,13 @@ import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
-import androidx.core.content.res.ResourcesCompat
 import com.kaopiz.kprogresshud.KProgressHUD
 import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.lib.activities.EditFeedbacktActivity
 import com.steamclock.feedbackt.lib.extensions.convertToBitmap
 import com.steamclock.feedbackt.lib.extensions.saveAsPng
+import com.steamclock.feedbackt.lib.extensions.prepForBitmapConversion
+import com.steamclock.feedbackt.lib.utils.DoAsync
 
 
 /**
@@ -77,25 +78,36 @@ object Feedbackt {
         return activity.window?.decorView?.rootView
     }
 
-    private fun grabFeedbackAndRun(activity: Activity, view: View?, runThis: (context: Context, uri: Uri) -> Unit) {
-        requestStoragePermissions(activity)
+    private fun grabFeedbackAndRun(activity: Activity,
+                                   view: View?,
+                                   runThis: (context: Context, uri: Uri) -> Unit) {
 
-        view?.post {
-            showHud(activity, "Generating...")
-            val bitmap = view?.convertToBitmap()
-            bitmap?.saveAsPng(activity, "feedbackt.png")?.let { uri ->
-                hideHud()
-                runThis(activity, uri)
-            } ?: run {
-                hideHud()
-                Log.e(TAG, "generateAndSendScreenshot failed")
-                // todo error
-            }
+        if (!hasStoragePermissions(activity)) {
+            requestStoragePermissions(activity)
+            return
         }
+
+        showHud(activity, "Generating...")
+        view?.prepForBitmapConversion()
+
+        DoAsync<Uri?>()
+            .doInBackground {
+                val bitmap = view?.convertToBitmap()
+                bitmap?.saveAsPng(activity, "feedbackt.png")
+            }.doOnPostExectute { uri ->
+                hideHud()
+
+                if (uri == null) {
+                    Log.e(TAG, "generateAndSendScreenshot failed")
+                } else {
+                    runThis(activity, uri)
+                }
+
+            }.execute()
     }
 
     fun emailBitmap(activity: Activity, bitmap: Bitmap) {
-        bitmap?.saveAsPng(activity, "feedbackt.png")?.let { uri ->
+        bitmap.saveAsPng(activity, "feedbackt.png")?.let { uri ->
             hideHud()
             emailBitmap(activity, uri)
         } ?: run {
@@ -140,4 +152,10 @@ object Feedbackt {
         }
     }
 
+    private fun hasStoragePermissions(context: Activity): Boolean {
+        if (Build.VERSION.SDK_INT >= 23) {
+            return checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+        return true
+    }
 }

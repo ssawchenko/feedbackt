@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.*
 import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import android.widget.RelativeLayout
 import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.lib.customcanvas.CanvasProxy
@@ -14,23 +13,20 @@ import java.util.*
 
 class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int = Color.RED): CanvasAction(canvasProxy) {
 
-    private var nextPath: Path? = null
-    private var undoItems = LinkedList<Path>()
-    private var redoItems = LinkedList<Path>()
+    data class PlacedBitmap(val bitmap: Bitmap, var x: Float, var y: Float)
+
+    private var undoItems = LinkedList<PlacedBitmap>()
+    private var redoItems = LinkedList<PlacedBitmap>()
 
     private var lastTouchX: Float = 0.toFloat()
     private var lastTouchY: Float = 0.toFloat()
 
     private var nextNum = 1
-
     private var paint: Paint = Paint()
-    private val numberedViewSize = 20.px
+    private val numberedViewSize = 30.px
+    private val placementOffset = numberedViewSize / 2
     private val numberedView: View =
         LayoutInflater.from(context).inflate(R.layout.view_numbered_action, null)
-
-
-    private var testBitmap : Bitmap? = null
-
 
     init {
         paint.isAntiAlias = true
@@ -48,28 +44,26 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
     override fun onTouchStart(x: Float, y: Float) {
         lastTouchX = x
         lastTouchY = y
+
+        val startBitmap = createNextBitmap()
+        undoItems.add(PlacedBitmap(startBitmap, lastTouchX, lastTouchY))
     }
 
     override fun onTouchMove(x: Float, y: Float) {
         lastTouchX = x
         lastTouchY = y
+        updateNextBitmap(x, y)
     }
 
     override fun onTouchUp(canvas: Canvas) {
-        val nextBitmap = createNextBitmap()
-
-        testBitmap = nextBitmap
-       // canvas.drawBitmap(nextBitmap, lastTouchX, lastTouchY, null)
+        // Indicate to the canvas that we are complete.
+        canvasProxy.addAction(this)
     }
 
     override fun draw(canvas: Canvas) {
-
-
-        testBitmap?.let {
-            canvas.drawBitmap(testBitmap, lastTouchX, lastTouchY, null)
+        undoItems.forEach {
+            canvas.drawBitmap(it.bitmap, it.x - placementOffset, it.y - placementOffset, null)
         }
-
-
     }
 
     override fun undo(keep: Boolean) {
@@ -91,6 +85,7 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
 
     override fun clearRedo() {
         redoItems.clear()
+        nextNum = undoItems.size + 1
     }
 
     //-------------------------------------------
@@ -101,6 +96,17 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
         nextNum++
         numberedView.prepForBitmapConversion()
         return numberedView.convertToBitmap()
+    }
+
+    private fun updateNextBitmap(x: Float, y: Float) {
+        try {
+            undoItems.last().let {
+                it.x = x
+                it.y = y
+            }
+        } catch (e: Exception) {
+            // shhhhhhhh, it's ok.
+        }
     }
 
 }

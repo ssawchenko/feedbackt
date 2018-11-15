@@ -123,5 +123,6 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
 
         // Clear action stacks
         pathActions.clearRedo()
+        numberedAction.clearRedo()
     }
 }

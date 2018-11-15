@@ -20,6 +20,7 @@ class FingerPaintView @JvmOverloads constructor(context: Context,
     private var mPaint: Paint
 
     private var paths = LinkedList<Path>()
+    private var redoPaths = LinkedList<Path>()
 
     private var mX: Float = 0.toFloat()
     private var mY: Float = 0.toFloat()
@@ -41,9 +42,19 @@ class FingerPaintView @JvmOverloads constructor(context: Context,
         setWillNotDraw(false)
     }
 
-    fun undoLast() {
+    fun undo() {
         try {
-            paths.removeLast()
+            redoPaths.add(paths.removeLast())
+        } catch (e: Exception) {
+            // shhhhhhhh, it's ok.
+        }
+
+        invalidate()
+    }
+
+    fun redo() {
+        try {
+            paths.add(redoPaths.removeLast())
         } catch (e: Exception) {
             // shhhhhhhh, it's ok.
         }
@@ -122,6 +133,7 @@ class FingerPaintView @JvmOverloads constructor(context: Context,
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                redoPaths.clear() // Nuke redo stack
                 onTouchStart(x, y)
                 invalidate()
             }

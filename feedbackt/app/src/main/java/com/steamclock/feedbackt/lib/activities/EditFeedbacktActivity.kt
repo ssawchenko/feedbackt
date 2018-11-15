@@ -5,18 +5,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity
 import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.lib.Constants
-
+import com.steamclock.feedbackt.lib.Feedbackt
 import kotlinx.android.synthetic.main.activity_edit_feedbackt.*
 import kotlinx.android.synthetic.main.content_edit_feedbackt.*
-import java.lang.Exception
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import com.steamclock.feedbackt.lib.Feedbackt
-import com.steamclock.feedbackt.lib.extensions.convertToBitmapWithKnownSize
 
 
 class EditFeedbacktActivity : AppCompatActivity() {
@@ -32,16 +26,19 @@ class EditFeedbacktActivity : AppCompatActivity() {
 
         original_image.post {
             // Once we have sized our original image, force the parent to use same layout.
+            // If we don't do this the bitmap conversion appears to fail.
             val editedImageLayout = edited_image_layout.layoutParams
             editedImageLayout.height = original_image.measuredHeight
             editedImageLayout.width = original_image.measuredWidth
             edited_image_layout.layoutParams = editedImageLayout
 
+            // Force canvas to be same size as edited image
             val fingerpaintLayout = fingerpaint_view.layoutParams
             fingerpaintLayout.height = original_image.measuredHeight
             fingerpaintLayout.width = original_image.measuredWidth
             fingerpaint_view.layoutParams = fingerpaintLayout
 
+            // todo height/width may no longer be needed.
             height = original_image.measuredHeight
             width = original_image.measuredWidth
         }
@@ -69,23 +66,6 @@ class EditFeedbacktActivity : AppCompatActivity() {
     private fun sendEdited() {
         val view = findViewById<View>(R.id.edited_image_layout)
         Feedbackt.grabFeedbackAndEmail(this, view)
-
-//        val bitmap = edited_image_layout.convertToBitmapWithKnownSize(width ?: 0, height ?: 0)
-//        Feedbackt.emailBitmap(this, bitmap)
-    }
-
-    /**
-     * Problem, View.convertToBitmap() throwing an exception - indicating that the width and
-     * height of the edited_image_layout is 0, even though we have already gone through a measure
-     * pass. For now, this appears to be a work around.
-     */
-    private fun sendBitmapWithKnownSize (v: View, width: Int, height: Int) {
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        bitmap.eraseColor(Color.TRANSPARENT)
-        val canvas = Canvas(bitmap)
-        v.draw(canvas)
-        //return bitmap
-        Feedbackt.emailBitmap(this, bitmap)
     }
 
     //---------------------------------------------------

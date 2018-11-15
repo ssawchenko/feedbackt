@@ -31,6 +31,13 @@
             android:src="@drawable/baseline_redo_white_48"
             />
 
+        <ImageView
+            android:id="@+id/sticker_button"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="match_parent"
+            android:src="@android:drawable/btn_plus" />
+
     </LinearLayout>
 
     <RelativeLayout

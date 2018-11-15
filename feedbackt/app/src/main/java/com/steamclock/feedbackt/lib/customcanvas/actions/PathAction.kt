@@ -1,13 +1,14 @@
 package com.steamclock.feedbackt.lib.customcanvas.actions
 
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import com.steamclock.feedbackt.lib.customcanvas.CanvasProxy
 import java.lang.Exception
 import java.util.*
 
-class PathAction(canvasProxy: CanvasProxy): CanvasAction(canvasProxy) {
+class PathAction(canvasProxy: CanvasProxy, lineColor: Int = Color.RED): CanvasAction(canvasProxy) {
 
     private var nextPath: Path? = null
     private var undoPaths = LinkedList<Path>()
@@ -18,16 +19,18 @@ class PathAction(canvasProxy: CanvasProxy): CanvasAction(canvasProxy) {
     private var lastTouchY: Float = 0.toFloat()
 
     init {
-        paint.setAntiAlias(true)
-        paint.setDither(true)
-        paint.setColor(-0x10000)
-        paint.setStyle(Paint.Style.STROKE)
-        paint.setStrokeJoin(Paint.Join.ROUND)
-        paint.setStrokeCap(Paint.Cap.ROUND)
-        paint.setStrokeWidth(12f)
+        paint.isAntiAlias = true
+        paint.isDither = true
+        paint.color = lineColor
+        paint.style = Paint.Style.STROKE
+        paint.strokeJoin = Paint.Join.ROUND
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.strokeWidth = 12f
     }
 
-
+    //-------------------------------------------
+    // CanvasAction
+    //-------------------------------------------
     override fun onTouchStart(x: Float, y: Float) {
         nextPath = Path()
         nextPath?.let {
@@ -56,28 +59,17 @@ class PathAction(canvasProxy: CanvasProxy): CanvasAction(canvasProxy) {
         nextPath?.let {
             it.lineTo(lastTouchX, lastTouchY)
             // commit the path to our offscreen
-            canvas!!.drawPath(it, paint)
+            canvas.drawPath(it, paint)
             // kill this so we don't double draw
             //it.reset()
             updateNextPath()
-            canvasProxy.addAction(this)
+            canvasProxy.addAction(this) // Action considered complete.
         }
         nextPath = null
     }
 
     override fun draw(canvas: Canvas) {
         canvas.drawPath(generateFullPath(), paint)
-    }
-
-    private fun updateNextPath() {
-        nextPath?.let {
-            undo(false)
-            add(it)
-        }
-    }
-
-    fun add(path: Path) {
-        undoPaths.add(path)
     }
 
     override fun undo(keep: Boolean) {
@@ -101,15 +93,23 @@ class PathAction(canvasProxy: CanvasProxy): CanvasAction(canvasProxy) {
         redoPaths.clear()
     }
 
+    //-------------------------------------------
+    // Private
+    //-------------------------------------------
     private fun generateFullPath(): Path {
         val result = Path()
         undoPaths.forEach { result.addPath(it) }
         return result
     }
 
+    private fun updateNextPath() {
+        nextPath?.let {
+            undo(false)
+            undoPaths.add(it)
+        }
+    }
+
     companion object {
-        private val MINP = 0.25f
-        private val MAXP = 0.75f
-        private val TOUCH_TOLERANCE = 4f
+        private const val TOUCH_TOLERANCE = 4f
     }
 }

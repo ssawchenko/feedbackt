@@ -6,6 +6,7 @@ import android.view.MotionEvent
 import android.util.AttributeSet
 import android.view.View
 import com.steamclock.feedbackt.lib.customcanvas.actions.CanvasAction
+import com.steamclock.feedbackt.lib.customcanvas.actions.NumberedAction
 import com.steamclock.feedbackt.lib.customcanvas.actions.PathAction
 import java.lang.Exception
 import java.util.*
@@ -15,18 +16,17 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
                                                  defStyleAttr: Int = 0) : View(context, attrs, defStyleAttr) {
 
     private var canvasActions = LinkedList<CanvasAction>()
-    private lateinit var pathActions: PathAction
+    private var activeAction: CanvasAction? = null
+    private var pathActions: PathAction
+    private var numberedAction: NumberedAction
 
-    private var mBitmap: Bitmap? = null
     private var canvas: Canvas? = null
-    //private var mPath: Path
-    //private var nextPath: Path? = null
-    private val mBitmapPaint: Paint
-//    private var mPaint: Paint
-//
-//    private var mX: Float = 0.toFloat()
-//    private var mY: Float = 0.toFloat()
+    private var bitmap: Bitmap? = null
+    private val bitmapPaint: Paint
 
+    /**
+     * Allows actions to indicate when they are considered "complete".
+     */
     private var canvasProxy = object: CanvasProxy {
         override fun addAction(action: CanvasAction) {
             canvasActions.add(action)
@@ -34,21 +34,13 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
     }
 
     init {
-//        mPaint = Paint()
-//        mPaint.setAntiAlias(true)
-//        mPaint.setDither(true)
-//        mPaint.setColor(-0x10000)
-//        mPaint.setStyle(Paint.Style.STROKE)
-//        mPaint.setStrokeJoin(Paint.Join.ROUND)
-//        mPaint.setStrokeCap(Paint.Cap.ROUND)
-//        mPaint.setStrokeWidth(12f)
-
         pathActions = PathAction(canvasProxy)
-
-        //mPath = Path()
-        mBitmapPaint = Paint(Paint.DITHER_FLAG)
-
+        numberedAction = NumberedAction(context, canvasProxy)
+        bitmapPaint = Paint(Paint.DITHER_FLAG)
         setWillNotDraw(false)
+
+        // Sets the action active at start.
+        activeAction = numberedAction
     }
 
     fun undo() {
@@ -77,30 +69,25 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        canvas = Canvas(mBitmap)
+        bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        canvas = Canvas(bitmap)
     }
 
     override fun onDraw(canvas: Canvas) {
-        //canvas.drawColor(-0x555556)
         canvas.drawColor(Color.TRANSPARENT)
-        //canvas.drawBitmap(mBitmap, 0f, 0f, mBitmapPaint)
-        //canvas.drawPath(mPath, mPaint)
-        pathActions.draw(canvas)
+        drawAll(canvas)
     }
 
     private fun onTouchStart(x: Float, y: Float) {
-        pathActions.onTouchStart(x, y)
+        activeAction?.onTouchStart(x, y)
     }
 
     private fun onTouchMove(x: Float, y: Float) {
-        pathActions.onTouchMove(x, y)
+        activeAction?.onTouchMove(x, y)
     }
 
-    // left off trying to force a canvas redraw.
-
     private fun onTouchUp() {
-        pathActions.onTouchUp(canvas!!)
+        activeAction?.onTouchUp(canvas!!)
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -123,6 +110,11 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
             }
         }
         return true
+    }
+
+    private fun drawAll(canvas: Canvas) {
+        pathActions.draw(canvas)
+        numberedAction.draw(canvas)
     }
 
     private fun clearRedo() {

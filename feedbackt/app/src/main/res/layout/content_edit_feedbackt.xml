@@ -49,7 +49,7 @@
             android:adjustViewBounds="true"
             android:src="@drawable/sample_screen" />
 
-        <com.steamclock.feedbackt.lib.views.FingerPaintView
+        <com.steamclock.feedbackt.lib.customcanvas.CustomCanvasView
             android:id="@+id/fingerpaint_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"

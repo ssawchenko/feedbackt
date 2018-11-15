@@ -28,7 +28,7 @@
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
-            android:src="@drawable/baseline_undo_white_48"
+            android:src="@drawable/baseline_redo_white_48"
             />
 
     </LinearLayout>

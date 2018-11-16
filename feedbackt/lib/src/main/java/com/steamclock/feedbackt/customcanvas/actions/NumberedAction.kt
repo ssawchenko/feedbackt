@@ -44,19 +44,17 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
     override fun onTouchStart(x: Float, y: Float) {
         lastTouchX = x
         lastTouchY = y
-
-        val startBitmap = createNextBitmap()
-        undoItems.add(PlacedBitmap(startBitmap, lastTouchX, lastTouchY))
     }
 
     override fun onTouchMove(x: Float, y: Float) {
         lastTouchX = x
         lastTouchY = y
-        updateNextBitmap(x, y)
     }
 
     override fun onTouchUp(canvas: Canvas) {
         // Indicate to the canvas that we are complete.
+        val startBitmap = createNextBitmap()
+        undoItems.add(PlacedBitmap(startBitmap, lastTouchX, lastTouchY))
         canvasProxy.addAction(this)
     }
 

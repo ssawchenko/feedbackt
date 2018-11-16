@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.lib.Constants
 import com.steamclock.feedbackt.lib.Feedbackt
+import com.steamclock.feedbackt.lib.customcanvas.CustomCanvasView
 import kotlinx.android.synthetic.main.activity_edit_feedbackt.*
 import kotlinx.android.synthetic.main.content_edit_feedbackt.*
 
@@ -24,6 +25,7 @@ class EditFeedbacktActivity : AppCompatActivity() {
         setContentView(R.layout.activity_edit_feedbackt)
         setSupportActionBar(toolbar)
 
+        // Resize canvases so that the user cannot "draw outside"
         original_image.post {
             // Once we have sized our original image, force the parent to use same layout.
             // If we don't do this the bitmap conversion appears to fail.
@@ -33,16 +35,28 @@ class EditFeedbacktActivity : AppCompatActivity() {
             edited_image_layout.layoutParams = editedImageLayout
 
             // Force canvas to be same size as edited image
-            val fingerpaintLayout = fingerpaint_view.layoutParams
-            fingerpaintLayout.height = original_image.measuredHeight
-            fingerpaintLayout.width = original_image.measuredWidth
-            fingerpaint_view.layoutParams = fingerpaintLayout
+            val customCanvasLayout = custom_canvas_view.layoutParams
+            customCanvasLayout.height = original_image.measuredHeight
+            customCanvasLayout.width = original_image.measuredWidth
+            custom_canvas_view.layoutParams = customCanvasLayout
 
             // todo height/width may no longer be needed.
             height = original_image.measuredHeight
             width = original_image.measuredWidth
         }
 
+        // Enable mode toggling
+        mode_selection_radio_group.setOnCheckedChangeListener { _, checkedId ->
+            when(checkedId) {
+                R.id.drawing_mode_button -> custom_canvas_view.mode = CustomCanvasView.Mode.Drawing
+                R.id.number_mode_button -> custom_canvas_view.mode = CustomCanvasView.Mode.NumberedBullets
+            }
+        }
+
+        // Start on drawing mode
+        mode_selection_radio_group.check(R.id.drawing_mode_button)
+
+        // Setup canvas
         try {
             photoUri = Uri.parse(intent.getStringExtra(Constants.EXTRA_BITMAP_URI))
             original_image.setImageURI(photoUri)
@@ -60,8 +74,8 @@ class EditFeedbacktActivity : AppCompatActivity() {
     private fun setupCanvas() {
         bottom_actions.visibility = View.VISIBLE
         send_it_button.setOnClickListener { sendEdited() }
-        undo_button.setOnClickListener { fingerpaint_view.undo() }
-        redo_button.setOnClickListener { fingerpaint_view.redo() }
+        undo_button.setOnClickListener { custom_canvas_view.undo() }
+        redo_button.setOnClickListener { custom_canvas_view.redo() }
     }
 
     private fun sendEdited() {

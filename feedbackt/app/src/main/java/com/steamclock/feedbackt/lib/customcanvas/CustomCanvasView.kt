@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.*
 import android.view.MotionEvent
 import android.util.AttributeSet
+import android.util.Log
 import android.view.View
 import com.steamclock.feedbackt.lib.customcanvas.actions.CanvasAction
 import com.steamclock.feedbackt.lib.customcanvas.actions.NumberedAction
@@ -15,21 +16,39 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
                                                  attrs: AttributeSet? = null,
                                                  defStyleAttr: Int = 0) : View(context, attrs, defStyleAttr) {
 
-    private var canvasActions = LinkedList<CanvasAction>()
-    private var activeAction: CanvasAction? = null
+    private var canvasUndoActions = LinkedList<CanvasAction>()
+    private var canvasRedoActions = LinkedList<CanvasAction>()
+
     private var pathActions: PathAction
     private var numberedAction: NumberedAction
+    private var activeAction: CanvasAction? = null
 
     private var canvas: Canvas? = null
     private var bitmap: Bitmap? = null
     private val bitmapPaint: Paint
+
+    enum class Mode {
+        Drawing,
+        NumberedBullets
+    }
+
+
+    var mode: Mode = Mode.Drawing
+        set(value) {
+            field = value
+            activeAction = when(field) {
+                Mode.Drawing -> pathActions
+                Mode.NumberedBullets -> numberedAction
+            }
+        }
 
     /**
      * Allows actions to indicate when they are considered "complete".
      */
     private var canvasProxy = object: CanvasProxy {
         override fun addAction(action: CanvasAction) {
-            canvasActions.add(action)
+            log("Adding ${action.javaClass.name} to action list")
+            canvasUndoActions.add(action)
         }
     }
 
@@ -39,15 +58,16 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         bitmapPaint = Paint(Paint.DITHER_FLAG)
         setWillNotDraw(false)
 
-        // Sets the action active at start.
-        activeAction = numberedAction
+        // Setup default drawing mode
+        mode = Mode.Drawing
     }
 
     fun undo() {
         try {
-            val lastAction = canvasActions.removeLast()
+            val lastAction = canvasUndoActions.removeLast()
+            log("Calling undo for ${lastAction.javaClass.name}")
             lastAction.undo()
-            canvasActions.add(lastAction)
+            canvasRedoActions.add(lastAction)
         } catch (e: Exception) {
             // shhhhhhhh, it's ok.
         }
@@ -57,9 +77,10 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
 
     fun redo() {
         try {
-            val lastAction = canvasActions.removeLast()
+            val lastAction = canvasRedoActions.removeLast()
+            log("Calling redo for ${lastAction.javaClass.name}")
             lastAction.redo()
-            canvasActions.add(lastAction)
+            canvasUndoActions.add(lastAction)
         } catch (e: Exception) {
             // shhhhhhhh, it's ok.
         }
@@ -118,11 +139,20 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
     }
 
     private fun clearRedo() {
+        log("Calling clearRedo")
         // Clear global stack
-        canvasActions.clear()
+        canvasRedoActions.clear()
 
         // Clear action stacks
         pathActions.clearRedo()
         numberedAction.clearRedo()
+    }
+
+    companion object {
+        private const val TAG = "CustomCanvasView"
+
+        fun log(message: String) {
+            Log.v(TAG, message)
+        }
     }
 }

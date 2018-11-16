@@ -23,6 +23,15 @@ android {
         }
     }
 
+    libraryVariants.all { variant ->
+        variant.outputs.all { output ->
+            if (outputFile != null && outputFileName.endsWith('.aar')) {
+                def SEP = "_"
+                def buildType = variant.variantData.variantConfiguration.buildType.name
+                outputFileName = "feedbackt${SEP}${defaultConfig.versionName}${SEP}${defaultConfig.versionCode}${SEP}${buildType}.aar"
+            }
+        }
+    }
 }
 
 dependencies {

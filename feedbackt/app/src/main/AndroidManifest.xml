@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.steamclock.feedbackt">
+    package="com.steamclock.feedbacktsample">
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".sample.MainActivity"
+            android:name="com.steamclock.feedbacktsample.sample.MainActivity"
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -33,7 +33,7 @@
         </provider>
 
         <activity
-            android:name=".lib.activities.EditFeedbacktActivity"
+            android:name="com.steamclock.feedbacktsample.lib.activities.EditFeedbacktActivity"
             android:label="@string/title_activity_edit_feedbackt"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>

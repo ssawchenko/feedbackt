@@ -1,4 +1,4 @@
-package com.steamclock.feedbackt.lib.utils
+package com.steamclock.feedbacktsample.lib.utils
 
 import android.os.AsyncTask
 

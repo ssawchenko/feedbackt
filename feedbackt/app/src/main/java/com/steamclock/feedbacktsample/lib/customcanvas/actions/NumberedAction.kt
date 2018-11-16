@@ -1,13 +1,13 @@
-package com.steamclock.feedbackt.lib.customcanvas.actions
+package com.steamclock.feedbacktsample.lib.customcanvas.actions
 
 import android.content.Context
 import android.graphics.*
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.RelativeLayout
-import com.steamclock.feedbackt.R
-import com.steamclock.feedbackt.lib.customcanvas.CanvasProxy
-import com.steamclock.feedbackt.lib.extensions.*
+import com.steamclock.feedbacktsample.R
+import com.steamclock.feedbacktsample.lib.customcanvas.CanvasProxy
+import com.steamclock.feedbacktsample.lib.extensions.*
 import kotlinx.android.synthetic.main.view_numbered_action.view.*
 import java.util.*
 

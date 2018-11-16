@@ -113,7 +113,7 @@
             android:adjustViewBounds="true"
             android:src="@drawable/sample_screen" />
 
-        <com.steamclock.feedbackt.lib.customcanvas.CustomCanvasView
+        <com.steamclock.feedbacktsample.lib.customcanvas.CustomCanvasView
             android:id="@+id/custom_canvas_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />

@@ -1,4 +1,4 @@
-package com.steamclock.feedbackt.lib.activities
+package com.steamclock.feedbacktsample.lib.activities
 
 import android.content.Context
 import android.content.Intent
@@ -6,10 +6,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.steamclock.feedbackt.R
-import com.steamclock.feedbackt.lib.Constants
-import com.steamclock.feedbackt.lib.Feedbackt
-import com.steamclock.feedbackt.lib.customcanvas.CustomCanvasView
+import com.steamclock.feedbacktsample.R
+import com.steamclock.feedbacktsample.lib.Constants
+import com.steamclock.feedbacktsample.lib.Feedbackt
+import com.steamclock.feedbacktsample.lib.customcanvas.CustomCanvasView
 import kotlinx.android.synthetic.main.activity_edit_feedbackt.*
 import kotlinx.android.synthetic.main.content_edit_feedbackt.*
 

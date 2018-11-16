@@ -1,4 +1,4 @@
-package com.steamclock.feedbackt.lib
+package com.steamclock.feedbacktsample.lib
 
 class Constants {
     companion object {

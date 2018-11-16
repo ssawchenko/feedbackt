@@ -1,7 +1,7 @@
-package com.steamclock.feedbackt.lib.customcanvas.actions
+package com.steamclock.feedbacktsample.lib.customcanvas.actions
 
 import android.graphics.Canvas
-import com.steamclock.feedbackt.lib.customcanvas.CanvasProxy
+import com.steamclock.feedbacktsample.lib.customcanvas.CanvasProxy
 
 abstract class CanvasAction(val canvasProxy: CanvasProxy) {
     // Proxied touch interactions

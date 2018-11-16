@@ -1,10 +1,10 @@
-package com.steamclock.feedbackt.lib.customcanvas.actions
+package com.steamclock.feedbacktsample.lib.customcanvas.actions
 
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
-import com.steamclock.feedbackt.lib.customcanvas.CanvasProxy
+import com.steamclock.feedbacktsample.lib.customcanvas.CanvasProxy
 import java.lang.Exception
 import java.util.*
 

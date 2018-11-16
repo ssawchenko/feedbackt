@@ -1,4 +1,4 @@
-package com.steamclock.feedbackt.lib.customcanvas
+package com.steamclock.feedbacktsample.lib.customcanvas
 
 import android.content.Context
 import android.graphics.*
@@ -6,9 +6,9 @@ import android.view.MotionEvent
 import android.util.AttributeSet
 import android.util.Log
 import android.view.View
-import com.steamclock.feedbackt.lib.customcanvas.actions.CanvasAction
-import com.steamclock.feedbackt.lib.customcanvas.actions.NumberedAction
-import com.steamclock.feedbackt.lib.customcanvas.actions.PathAction
+import com.steamclock.feedbacktsample.lib.customcanvas.actions.CanvasAction
+import com.steamclock.feedbacktsample.lib.customcanvas.actions.NumberedAction
+import com.steamclock.feedbacktsample.lib.customcanvas.actions.PathAction
 import java.lang.Exception
 import java.util.*
 

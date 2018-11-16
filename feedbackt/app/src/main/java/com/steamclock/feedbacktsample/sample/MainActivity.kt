@@ -1,10 +1,9 @@
-package com.steamclock.feedbackt.sample
+package com.steamclock.feedbacktsample.sample
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.res.ResourcesCompat
-import com.steamclock.feedbackt.R
-import com.steamclock.feedbackt.lib.Feedbackt
+import com.steamclock.feedbacktsample.R
+import com.steamclock.feedbacktsample.lib.Feedbackt
 
 import kotlinx.android.synthetic.main.activity_main.*
 import com.leinardi.android.speeddial.SpeedDialActionItem

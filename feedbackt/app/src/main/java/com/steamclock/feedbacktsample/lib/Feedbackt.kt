@@ -1,4 +1,4 @@
-package com.steamclock.feedbackt.lib
+package com.steamclock.feedbacktsample.lib
 
 import android.Manifest
 import android.app.Activity
@@ -14,12 +14,12 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.kaopiz.kprogresshud.KProgressHUD
-import com.steamclock.feedbackt.R
-import com.steamclock.feedbackt.lib.activities.EditFeedbacktActivity
-import com.steamclock.feedbackt.lib.extensions.convertToBitmap
-import com.steamclock.feedbackt.lib.extensions.saveAsPng
-import com.steamclock.feedbackt.lib.extensions.prepForBitmapConversion
-import com.steamclock.feedbackt.lib.utils.DoAsync
+import com.steamclock.feedbacktsample.R
+import com.steamclock.feedbacktsample.lib.activities.EditFeedbacktActivity
+import com.steamclock.feedbacktsample.lib.extensions.convertToBitmap
+import com.steamclock.feedbacktsample.lib.extensions.saveAsPng
+import com.steamclock.feedbacktsample.lib.extensions.prepForBitmapConversion
+import com.steamclock.feedbacktsample.lib.utils.DoAsync
 
 
 /**

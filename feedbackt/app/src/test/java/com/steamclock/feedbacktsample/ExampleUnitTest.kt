@@ -1,4 +1,4 @@
-package com.steamclock.feedbackt
+package com.steamclock.feedbacktsample
 
 import org.junit.Test
 

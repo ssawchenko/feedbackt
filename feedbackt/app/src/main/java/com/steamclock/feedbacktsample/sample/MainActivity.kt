@@ -3,13 +3,10 @@ package com.steamclock.feedbacktsample.sample
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.steamclock.feedbacktsample.R
-import com.steamclock.feedbacktsample.lib.Feedbackt
-
 import kotlinx.android.synthetic.main.activity_main.*
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
-
-
+import com.steamclock.feedbackt.Feedbackt
 
 class MainActivity : AppCompatActivity() {
 

@@ -4,8 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Environment
-import androidx.core.content.FileProvider
 import com.steamclock.feedbackt.R
+import com.steamclock.feedbackt.utils.FeedbacktFileProvider
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -27,7 +27,7 @@ fun Bitmap.saveAsPng(context: Context, filename: String): Uri? {
 
     // Supporting Nougat and up, we need to run our URIs through a FileProvider.
     val providerAuth = context.getString(R.string.file_provider_authority)
-    val resultUri = FileProvider.getUriForFile(context, providerAuth, file)
+    val resultUri = FeedbacktFileProvider().getUriForFile(context, file)
 
     // Return the saved image path to uri
     return resultUri

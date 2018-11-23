@@ -2,37 +2,96 @@ package com.steamclock.feedbackt
 
 import android.Manifest
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.kaopiz.kprogresshud.KProgressHUD
-import com.steamclock.feedbackt.utils.DoAsync
 import com.steamclock.feedbackt.activities.EditFeedbacktActivity
 import com.steamclock.feedbackt.extensions.convertToBitmap
 import com.steamclock.feedbackt.extensions.prepForBitmapConversion
 import com.steamclock.feedbackt.extensions.saveAsPng
+import com.steamclock.feedbackt.extensions.setOnXLongPress
+import com.steamclock.feedbackt.utils.DoAsync
+import java.lang.ref.WeakReference
+
 
 /**
  * Feedbackt Singleton
  */
 object Feedbackt {
 
-    private val TAG = "Feedbackt"
+    val TAG = "Feedbackt"
     private val email = "shayla@steamclock.com"
     private val emailTitle = "Sending feedback"
-    private var commonHud: KProgressHUD? = null
+
+    // todo static field leaks, may want to move Feedbackt out of the singleton pattern.
+    private var commonHud: WeakReference<KProgressHUD>? = null
+    private var currentActivity: WeakReference<Activity>? = null
 
     //-------------------------------
     // Public
     //-------------------------------
+    fun enableMultiTouchToActivate(application: Application): Boolean {
+        Log.v(TAG, "Feedback attempting to enableMultiTouchToActivate")
+        val pm = application.packageManager
+        when {
+            pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_JAZZHAND) -> {
+                // 5 or more simultaneous independent pointers
+            }
+            pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH_DISTINCT) -> {
+                // 2 independent pointers
+
+            }
+            pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN_MULTITOUCH) -> {
+                // 2 basic pointers
+            }
+            else -> {
+                Log.e(TAG, "No multitouch support; Feedbackt cannot enableMultiTouchToActivate")
+                // No multitouch support
+                return false
+            }
+        }
+
+        Log.v(TAG, "Feedback called registerActivityLifecycleCallbacks")
+        application.registerActivityLifecycleCallbacks(applicationLifecycleListener)
+        return true
+    }
+
+    fun disableMultiTouchToActivate(application: Application) {
+        application.unregisterActivityLifecycleCallbacks(applicationLifecycleListener)
+    }
+
+    fun enableMultiTouchToActivateOnActivity(activity: Activity) {
+        currentActivity = WeakReference(activity)
+        Log.v(TAG, "enableMultiTouchToActivateOnActivity")
+
+        getContentView(activity)?.let {
+            Log.v(TAG, "rootView is ${it.javaClass.name}")
+            it.setOnXLongPress(3, 1000) {
+                if (activity.isFinishing) return@setOnXLongPress
+                Feedbackt.grabFeedbackAndEdit(activity)
+            }
+        } ?: run {
+            Log.e(TAG, "Could not get RootView for activity")
+        }
+    }
+
+    fun disableMultiTouchToActivateOnActivity() {
+        Log.v(TAG, "disableMultiTouchToActivateOnActivity")
+        currentActivity?.get()?.let { getRootView(it)?.setOnTouchListener(null) }
+        currentActivity = null
+    }
+
     fun grabFeedbackAndEmail(activity: Activity, view: View? = getRootView(activity)) {
         grabFeedbackAndRun(activity, view, ::emailBitmap)
     }
@@ -47,26 +106,26 @@ object Feedbackt {
 
     fun showHud(activity: Activity, text: Any? = null) {
         hideHud()
-        commonHud = KProgressHUD.create(activity)
+        commonHud = WeakReference(KProgressHUD.create(activity)
             .setStyle(KProgressHUD.Style.SPIN_INDETERMINATE)
             .setCancellable(true)
             .setAnimationSpeed(2)
             .setBackgroundColor(ContextCompat.getColor(activity, R.color.colorAccent))
-            .setDimAmount(0.5f)
+            .setDimAmount(0.5f))
 
         text?.let {
             if (it is String) {
-                commonHud?.setLabel(it)
+                commonHud?.get()?.setLabel(it)
             }
             if (it is Int) {
-                commonHud?.setLabel(activity.getString(it))
+                commonHud?.get()?.setLabel(activity.getString(it))
             }
         }
-        commonHud?.show()
+        commonHud?.get()?.show()
     }
 
     fun hideHud() {
-        commonHud?.dismiss()
+        commonHud?.get()?.dismiss()
     }
 
     //-------------------------------
@@ -74,6 +133,10 @@ object Feedbackt {
     //-------------------------------
     private fun getRootView(activity: Activity): View? {
         return activity.window?.decorView?.rootView
+    }
+
+    private fun getContentView(activity: Activity): View? {
+        return activity.findViewById<View>(android.R.id.content)
     }
 
     private fun grabFeedbackAndRun(activity: Activity,
@@ -85,7 +148,7 @@ object Feedbackt {
             return
         }
 
-        showHud(activity, "Generating...")
+        //showHud(activity, "Generating...")
         view?.prepForBitmapConversion()
 
         DoAsync<Uri?>()
@@ -155,5 +218,23 @@ object Feedbackt {
             return checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
         }
         return true
+    }
+
+    private val applicationLifecycleListener = object: Application.ActivityLifecycleCallbacks {
+        // Auto enable / disable shake detector
+        override fun onActivityPaused(activity: Activity?) { activity?.let { disableMultiTouchToActivateOnActivity() } }
+
+        override fun onActivityResumed(activity: Activity?) { activity?.let { enableMultiTouchToActivateOnActivity(it) } }
+
+        // Not used
+        override fun onActivityStarted(activity: Activity?) {}
+
+        override fun onActivityDestroyed(activity: Activity?) {}
+
+        override fun onActivitySaveInstanceState(activity: Activity?, outState: Bundle?) {}
+
+        override fun onActivityStopped(activity: Activity?) {}
+
+        override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) {}
     }
 }

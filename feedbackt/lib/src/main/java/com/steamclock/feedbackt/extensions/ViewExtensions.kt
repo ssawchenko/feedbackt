@@ -3,7 +3,10 @@ package com.steamclock.feedbackt.extensions
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.util.Log
+import android.view.MotionEvent
 import android.view.View
+import com.steamclock.feedbackt.Feedbackt
 
 /**
  * Must be called on UI Thread.
@@ -28,4 +31,34 @@ fun View.convertToBitmapWithKnownSize(knownWidth: Int, knownHeight: Int): Bitmap
     val canvas = Canvas(bitmap)
     draw(canvas)
     return bitmap
+}
+
+/**
+ * Note, does not check to make sure device supports numTouches number of pointers.
+ */
+fun View.setOnXLongPress(numTouches: Int, timeoutMs: Long, callback: () -> Unit) {
+
+    val onTimeout = Runnable {
+        Log.v(Feedbackt.TAG, "setOnXLongPress firing callback on event")
+        callback()
+    }
+
+    setOnTouchListener { _, event ->
+        Log.v(Feedbackt.TAG, "setOnTouchListener touch event")
+        val action = event.action and MotionEvent.ACTION_MASK
+        val pointerCount = event.pointerCount
+
+        // Only trigger callback on the pointer down to avoid running logic twice
+        if (action == MotionEvent.ACTION_POINTER_DOWN) {
+            if (pointerCount == numTouches) {
+                Log.v(Feedbackt.TAG, "setOnXLongPress starting timer")
+                postDelayed(onTimeout, timeoutMs)
+
+            } else {
+                removeCallbacks(onTimeout)
+            }
+        }
+
+        false
+    }
 }

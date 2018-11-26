@@ -12,6 +12,11 @@ import com.steamclock.feedbackt.Feedbackt
  * Must be called on UI Thread.
  */
 fun View.prepForBitmapConversion() {
+    // If we already have a measured size, do not force a re-measure
+    if (measuredHeight != 0 && measuredWidth != 0) return
+
+    // Else, force a measure on the view so that we have a measuredHeight and measuredWidth
+    // for convertToBitmap
     val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
     measure(measureSpec, measureSpec)
     layout(0, 0, measuredWidth, measuredHeight)

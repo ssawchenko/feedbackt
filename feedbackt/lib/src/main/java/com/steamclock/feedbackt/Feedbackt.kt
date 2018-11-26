@@ -4,9 +4,11 @@ import android.Manifest
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.content.Context.SENSOR_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -16,6 +18,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.kaopiz.kprogresshud.KProgressHUD
+import com.squareup.seismic.ShakeDetector
 import com.steamclock.feedbackt.activities.EditFeedbacktActivity
 import com.steamclock.feedbackt.extensions.convertToBitmap
 import com.steamclock.feedbackt.extensions.prepForBitmapConversion
@@ -23,7 +26,6 @@ import com.steamclock.feedbackt.extensions.saveAsPng
 import com.steamclock.feedbackt.extensions.setOnXLongPress
 import com.steamclock.feedbackt.utils.DoAsync
 import java.lang.ref.WeakReference
-
 
 /**
  * Feedbackt Singleton
@@ -37,9 +39,25 @@ object Feedbackt {
     // todo static field leaks, may want to move Feedbackt out of the singleton pattern.
     private var commonHud: WeakReference<KProgressHUD>? = null
     private var currentActivity: WeakReference<Activity>? = null
+    private var shakeDetector: ShakeDetector? = null
+
+    private var autoDetectMultitouch = false
+    private var autoDetetctShake = false
+
+    private fun registerLifecycleCallbacks(application: Application) {
+        application.registerActivityLifecycleCallbacks(applicationLifecycleListener)
+    }
+
+    private fun unregisterLifecycleCallbacksIfNoAutoDetectors(application: Application) {
+        if (autoDetetctShake || autoDetectMultitouch) {
+            return
+        }
+
+        application.unregisterActivityLifecycleCallbacks(applicationLifecycleListener)
+    }
 
     //-------------------------------
-    // Public
+    // Multitouch
     //-------------------------------
     fun enableMultiTouchToActivate(application: Application): Boolean {
         Log.v(TAG, "Feedback attempting to enableMultiTouchToActivate")
@@ -63,12 +81,14 @@ object Feedbackt {
         }
 
         Log.v(TAG, "Feedback called registerActivityLifecycleCallbacks")
-        application.registerActivityLifecycleCallbacks(applicationLifecycleListener)
+        autoDetectMultitouch = true
+        registerLifecycleCallbacks(application)
         return true
     }
 
     fun disableMultiTouchToActivate(application: Application) {
-        application.unregisterActivityLifecycleCallbacks(applicationLifecycleListener)
+        autoDetectMultitouch = false
+        unregisterLifecycleCallbacksIfNoAutoDetectors(application)
     }
 
     fun enableMultiTouchToActivateOnActivity(activity: Activity) {
@@ -92,6 +112,37 @@ object Feedbackt {
         currentActivity = null
     }
 
+    //-------------------------------
+    // Shake
+    //-------------------------------
+    fun enableShakeToActivate(application: Application) {
+        autoDetetctShake = true
+        registerLifecycleCallbacks(application)
+    }
+
+    fun disableShakeToActivate(application: Application) {
+        autoDetetctShake = false
+        unregisterLifecycleCallbacksIfNoAutoDetectors(application)
+    }
+
+    fun enableShakeToActivateOnActivity(activity: Activity) {
+        val sensorManager = activity.getSystemService(SENSOR_SERVICE) as SensorManager?
+        shakeDetector = ShakeDetector {
+            if (activity.isFinishing) return@ShakeDetector
+            Feedbackt.grabFeedbackAndEdit(activity)
+        }
+        shakeDetector?.setSensitivity(ShakeDetector.SENSITIVITY_LIGHT)
+        shakeDetector?.start(sensorManager)
+    }
+
+    fun disableShakeToActivateOnActivity() {
+        shakeDetector?.stop()
+        shakeDetector = null
+    }
+
+    //-------------------------------
+    // Public
+    //-------------------------------
     fun grabFeedbackAndEmail(activity: Activity, view: View? = getRootView(activity)) {
         grabFeedbackAndRun(activity, view, ::emailBitmap)
     }
@@ -136,7 +187,7 @@ object Feedbackt {
     }
 
     private fun getContentView(activity: Activity): View? {
-        return activity.findViewById<View>(android.R.id.content)
+        return activity.findViewById(android.R.id.content)
     }
 
     private fun grabFeedbackAndRun(activity: Activity,
@@ -148,7 +199,7 @@ object Feedbackt {
             return
         }
 
-        //showHud(activity, "Generating...")
+        showHud(activity, "Generating Feedbackt...")
         view?.prepForBitmapConversion()
 
         DoAsync<Uri?>()
@@ -222,9 +273,19 @@ object Feedbackt {
 
     private val applicationLifecycleListener = object: Application.ActivityLifecycleCallbacks {
         // Auto enable / disable shake detector
-        override fun onActivityPaused(activity: Activity?) { activity?.let { disableMultiTouchToActivateOnActivity() } }
+        override fun onActivityPaused(activity: Activity?) {
+            activity?.let {
+                if (autoDetectMultitouch) disableMultiTouchToActivateOnActivity()
+                if (autoDetetctShake) disableShakeToActivateOnActivity()
+            }
+        }
 
-        override fun onActivityResumed(activity: Activity?) { activity?.let { enableMultiTouchToActivateOnActivity(it) } }
+        override fun onActivityResumed(activity: Activity?) {
+            activity?.let {
+                if (autoDetectMultitouch) enableMultiTouchToActivateOnActivity(it)
+                if (autoDetetctShake) enableShakeToActivateOnActivity(it)
+            }
+        }
 
         // Not used
         override fun onActivityStarted(activity: Activity?) {}

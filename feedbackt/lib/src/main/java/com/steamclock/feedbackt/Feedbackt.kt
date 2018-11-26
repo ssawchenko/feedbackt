@@ -40,6 +40,7 @@ object Feedbackt {
     private var commonHud: WeakReference<KProgressHUD>? = null
     private var currentActivity: WeakReference<Activity>? = null
     private var shakeDetector: ShakeDetector? = null
+    private var grabInProgress = false
 
     private var autoDetectMultitouch = false
     private var autoDetetctShake = false
@@ -199,6 +200,11 @@ object Feedbackt {
             return
         }
 
+        if (grabInProgress) {
+            return
+        }
+
+        grabInProgress = true
         showHud(activity, "Generating Feedbackt...")
         view?.prepForBitmapConversion()
 
@@ -208,6 +214,7 @@ object Feedbackt {
                 bitmap?.saveAsPng(activity, "feedbackt.png")
             }.doOnPostExectute { uri ->
                 hideHud()
+                grabInProgress = false
 
                 if (uri == null) {
                     Log.e(TAG, "generateAndSendScreenshot failed")

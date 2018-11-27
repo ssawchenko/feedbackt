@@ -1,7 +1,7 @@
 <resources>
-
     <string name="file_provider_authority" translatable="false">com.steamclock.feedbackt.fileprovider</string>
 
     <string name="app_name">Feedbackt</string>
     <string name="title_activity_edit_feedbackt">Edit Feedbackt</string>
+    <string name="numbered_action_email_content_header"></string>
 </resources>

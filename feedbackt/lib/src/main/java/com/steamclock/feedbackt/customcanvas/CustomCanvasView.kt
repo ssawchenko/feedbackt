@@ -21,7 +21,7 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         None,
         Drawing,            // Lines only
         NumberedBullets,    // Numbers only
-        Fused               // Path and numbers together
+        Fused               // Path (draw) and numbers (tap) together
     }
 
     private var canvasUndoActions = LinkedList<CanvasAction>()

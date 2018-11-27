@@ -9,6 +9,7 @@ import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.customcanvas.CanvasProxy
 import com.steamclock.feedbackt.extensions.*
 import kotlinx.android.synthetic.main.view_numbered_action.view.*
+import java.lang.StringBuilder
 import java.util.*
 
 class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int = Color.RED): CanvasAction(canvasProxy) {
@@ -84,6 +85,21 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
     override fun clearRedo() {
         redoItems.clear()
         nextNum = undoItems.size + 1
+    }
+
+    override fun emailContent(): String? {
+        val numberOfBullets = undoItems.count()
+        if (numberOfBullets == 0) {
+            return null
+        }
+
+        val contentBuilder = StringBuilder()
+        contentBuilder.append("$i: \n")
+        for (i in 1..numberOfBullets) {
+            contentBuilder.append("$i: \n")
+        }
+
+        return super.emailContent()
     }
 
     //-------------------------------------------

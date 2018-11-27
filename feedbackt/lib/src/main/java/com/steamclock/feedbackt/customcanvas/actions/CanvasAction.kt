@@ -16,4 +16,8 @@ abstract class CanvasAction(val canvasProxy: CanvasProxy) {
 
     // Proxied canvas interactions
     open fun draw(canvas: Canvas) {}
+
+    // Any special content that this action wants to the email that will be
+    // generated when feebackt is sent/shared.
+    open fun emailContent(): String? { return null }
 }

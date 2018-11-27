@@ -72,11 +72,13 @@
 
         <ImageView
             android:id="@+id/original_image"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
             android:layout_centerInParent="true"
             android:adjustViewBounds="true"
-            android:src="@drawable/sample_screen" />
+            android:src="@drawable/sample_screen"
+            tools:background="#ff0000"/>
 
         <com.steamclock.feedbackt.customcanvas.CustomCanvasView
             android:id="@+id/custom_canvas_view"

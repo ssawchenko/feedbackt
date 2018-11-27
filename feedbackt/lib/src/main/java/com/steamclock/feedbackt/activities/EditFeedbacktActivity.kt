@@ -12,6 +12,11 @@ import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.customcanvas.CustomCanvasView
 import kotlinx.android.synthetic.main.activity_edit_feedbackt.*
 import kotlinx.android.synthetic.main.content_edit_feedbackt.*
+import androidx.constraintlayout.solver.widgets.WidgetContainer.getBounds
+import android.graphics.RectF
+import android.graphics.drawable.Drawable
+import android.widget.ImageView
+
 
 class EditFeedbacktActivity : AppCompatActivity() {
 
@@ -26,17 +31,25 @@ class EditFeedbacktActivity : AppCompatActivity() {
 
         // Resize canvases so that the user cannot "draw outside"
         original_image.post {
+
+            val bounds = getImageBounds(original_image)
+
+            //val boundsWidth = original_image.measuredHeight
+            //val boundsHeight = original_image.measuredWidth
+            val boundsWidth = bounds.width().toInt()
+            val boundsHeight = bounds.height().toInt()
+
             // Once we have sized our original image, force the parent to use same layout.
             // If we don't do this the bitmap conversion appears to fail.
             val editedImageLayout = edited_image_layout.layoutParams
-            editedImageLayout.height = original_image.measuredHeight
-            editedImageLayout.width = original_image.measuredWidth
+            editedImageLayout.height = boundsHeight
+            editedImageLayout.width = boundsWidth
             edited_image_layout.layoutParams = editedImageLayout
 
-            // Force canvas to be same size as edited image
+            // Force canvas to be same size as edited image so the user cannot "draw off" the page.
             val customCanvasLayout = custom_canvas_view.layoutParams
-            customCanvasLayout.height = original_image.measuredHeight
-            customCanvasLayout.width = original_image.measuredWidth
+            customCanvasLayout.height = boundsHeight
+            customCanvasLayout.width = boundsWidth
             custom_canvas_view.layoutParams = customCanvasLayout
 
             // todo height/width may no longer be needed.
@@ -53,6 +66,12 @@ class EditFeedbacktActivity : AppCompatActivity() {
             // todo show error.
             showError()
         }
+    }
+
+    private fun getImageBounds(imageView: ImageView): RectF {
+        val bounds = RectF()
+        imageView.drawable?.let { imageView.imageMatrix.mapRect(bounds, RectF(it.bounds)) }
+        return bounds
     }
 
     private fun showError() {

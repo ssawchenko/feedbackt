@@ -44,17 +44,6 @@ class EditFeedbacktActivity : AppCompatActivity() {
             width = original_image.measuredWidth
         }
 
-        // Enable mode toggling
-        mode_selection_radio_group.setOnCheckedChangeListener { _, checkedId ->
-            when(checkedId) {
-                R.id.drawing_mode_button -> custom_canvas_view.mode = CustomCanvasView.Mode.Drawing
-                R.id.number_mode_button -> custom_canvas_view.mode = CustomCanvasView.Mode.NumberedBullets
-            }
-        }
-
-        // Start on drawing mode
-        mode_selection_radio_group.check(R.id.drawing_mode_button)
-
         // Setup canvas
         try {
             photoUri = Uri.parse(intent.getStringExtra(Constants.EXTRA_BITMAP_URI))
@@ -71,6 +60,7 @@ class EditFeedbacktActivity : AppCompatActivity() {
     }
 
     private fun setupCanvas() {
+        custom_canvas_view.mode = CustomCanvasView.Mode.Fused
         bottom_actions.visibility = View.VISIBLE
         send_it_button.setOnClickListener { sendEdited() }
         undo_button.setOnClickListener { custom_canvas_view.undo() }

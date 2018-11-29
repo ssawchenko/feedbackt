@@ -96,6 +96,12 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         invalidate()
     }
 
+    fun getEmailContent(): String? {
+        // Currently fusedAction handles both valid actions.
+        // If we add more actions in the future this may need to get changed.
+        return fusedAction.emailContent()
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)

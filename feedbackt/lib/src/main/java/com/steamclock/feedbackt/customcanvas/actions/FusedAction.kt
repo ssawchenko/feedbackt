@@ -3,6 +3,7 @@ package com.steamclock.feedbackt.customcanvas.actions
 import android.content.Context
 import android.graphics.*
 import com.steamclock.feedbackt.customcanvas.CanvasProxy
+import java.lang.StringBuilder
 import java.util.*
 
 /**
@@ -100,5 +101,17 @@ class FusedAction(context: Context, canvasProxy: CanvasProxy): CanvasAction(canv
         fusedRedoActions.clear()
         pathAction.clearRedo()
         numberedAction.clearRedo()
+    }
+
+    override fun emailContent(): String? {
+        val pathContent = pathAction.emailContent()
+        val numbersContent = numberedAction.emailContent()
+
+        return when {
+            numbersContent != null && pathContent != null -> "$numbersContent\n\n$pathContent"
+            numbersContent != null -> numbersContent
+            pathContent != null -> pathContent
+            else -> null
+        }
     }
 }

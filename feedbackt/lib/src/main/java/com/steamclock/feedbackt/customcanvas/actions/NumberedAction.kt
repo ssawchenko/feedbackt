@@ -94,12 +94,12 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
         }
 
         val contentBuilder = StringBuilder()
-        contentBuilder.append("$i: \n")
+        contentBuilder.appendln("--- Details by Number ---")
         for (i in 1..numberOfBullets) {
-            contentBuilder.append("$i: \n")
+            contentBuilder.appendln("$i: ")
         }
 
-        return super.emailContent()
+        return contentBuilder.toString()
     }
 
     //-------------------------------------------

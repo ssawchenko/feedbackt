@@ -88,7 +88,7 @@ class EditFeedbacktActivity : AppCompatActivity() {
 
     private fun sendEdited() {
         val view = findViewById<View>(R.id.edited_image_layout)
-        Feedbackt.grabFeedbackAndEmail(this, view)
+        Feedbackt.grabFeedbackAndEmail(this, view, custom_canvas_view.getEmailContent())
     }
 
     //---------------------------------------------------

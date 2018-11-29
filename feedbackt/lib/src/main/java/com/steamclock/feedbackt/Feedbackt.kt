@@ -25,6 +25,7 @@ import com.steamclock.feedbackt.extensions.prepForBitmapConversion
 import com.steamclock.feedbackt.extensions.saveAsPng
 import com.steamclock.feedbackt.extensions.setOnXLongPress
 import com.steamclock.feedbackt.utils.DoAsync
+import java.lang.StringBuilder
 import java.lang.ref.WeakReference
 
 /**
@@ -116,9 +117,10 @@ object Feedbackt {
     //-------------------------------
     // Shake
     //-------------------------------
-    fun enableShakeToActivate(application: Application) {
+    fun enableShakeToActivate(application: Application, activity: Activity? = null) {
         autoDetetctShake = true
         registerLifecycleCallbacks(application)
+        if (activity != null) enableShakeToActivateOnActivity(activity)
     }
 
     fun disableShakeToActivate(application: Application) {
@@ -144,8 +146,8 @@ object Feedbackt {
     //-------------------------------
     // Public
     //-------------------------------
-    fun grabFeedbackAndEmail(activity: Activity, view: View? = getRootView(activity)) {
-        grabFeedbackAndRun(activity, view, ::emailBitmap)
+    fun grabFeedbackAndEmail(activity: Activity, view: View? = getRootView(activity), text: String? = null) {
+        grabFeedbackAndRun(activity, view, createEmailBitmapWithString(text))
     }
 
     fun grabFeedbackAndEdit(activity: Activity, view: View? = getRootView(activity)) {
@@ -225,10 +227,10 @@ object Feedbackt {
             }.execute()
     }
 
-    fun emailBitmap(activity: Activity, bitmap: Bitmap) {
+    fun emailBitmap(activity: Activity, bitmap: Bitmap, text: String = "") {
         bitmap.saveAsPng(activity, "feedbackt.png")?.let { uri ->
             hideHud()
-            emailBitmap(activity, uri)
+            createEmailBitmapWithString(text).invoke(activity, uri)
         } ?: run {
             hideHud()
             Log.e(TAG, "generateAndSendScreenshot failed")
@@ -236,16 +238,21 @@ object Feedbackt {
         }
     }
 
-    private fun emailBitmap(context: Context, uri: Uri) {
-        val emailIntent = Intent(Intent.ACTION_SEND)
-        emailIntent.type = "image/png"
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
-        emailIntent.putExtra(Intent.EXTRA_SUBJECT, emailTitle)
-        emailIntent.putExtra(Intent.EXTRA_STREAM, uri)
+    private fun createEmailBitmapWithString(text: String?): (context: Context, uri: Uri) -> Unit {
+        val messageText = "${generateGreetingText()}\n\n\n${text ?: ""}\n\n${generateDeviceDetailsText()}"
+        return { context, uri ->
+            val emailIntent = Intent(Intent.ACTION_SEND)
 
-        emailIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        context.startActivity(Intent.createChooser(emailIntent, "Send email"))
+            emailIntent.type = "image/png"
+            emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, emailTitle)
+            emailIntent.putExtra(Intent.EXTRA_TEXT, messageText)
+            emailIntent.putExtra(Intent.EXTRA_STREAM, uri)
+
+            emailIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(Intent.createChooser(emailIntent, "Send email"))
+        }
     }
 
     private fun launchEdit(context: Context, uri: Uri) {
@@ -260,6 +267,19 @@ object Feedbackt {
         viewIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         context.startActivity(Intent.createChooser(viewIntent, "View Screenshot"))
+    }
+
+    private fun generateGreetingText(): String {
+        return "I have some feedback for the attached screenshot: "
+    }
+
+    private fun generateDeviceDetailsText(): String {
+        val contentBuilder = StringBuilder()
+        contentBuilder.appendln("--- Device Details ---")
+        contentBuilder.appendln("App Version: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
+        contentBuilder.appendln("Device Model: ${Build.MANUFACTURER} ${Build.MODEL}")
+        contentBuilder.appendln("OS Version: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
+        return contentBuilder.toString()
     }
 
     private fun requestStoragePermissions(context: Activity) {

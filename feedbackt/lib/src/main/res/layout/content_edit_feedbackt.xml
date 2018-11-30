@@ -21,32 +21,41 @@
         android:orientation="horizontal">
 
         <RelativeLayout
-            android:id="@+id/undo_button"
+            android:id="@+id/undo_button_layout"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="#aaaaaa">
+            android:background="@drawable/selector_undo_redo_button_background">
 
             <ImageView
+                android:id="@+id/undo_button_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:src="@drawable/baseline_undo_white_24" />
+                android:src="@drawable/ic_undo_white_48dp"
+                android:tint="@color/darkGrey"/>
 
         </RelativeLayout>
 
+        <View
+            android:layout_width="@dimen/border_thickness"
+            android:layout_height="match_parent"
+            android:background="@color/darkGrey" />
+
         <RelativeLayout
-            android:id="@+id/redo_button"
+            android:id="@+id/redo_button_layout"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="#aaaaaa">
+            android:background="@drawable/selector_undo_redo_button_background">
 
             <ImageView
+                android:id="@+id/redo_button_image"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:src="@drawable/baseline_redo_white_24" />
+                android:src="@drawable/ic_redo_white_48p"
+                android:tint="@color/darkGrey"/>
         </RelativeLayout>
 
         <View

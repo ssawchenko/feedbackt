@@ -5,4 +5,8 @@
     <color name="colorAccent">#93748e</color>
 
     <color name="darkGrey">#484848</color>
+
+    <color name="pressedButtonColor">#BDBDBD</color>
+    <color name="enabledButtonColor">#ffffff</color>
+    <color name="disabledButtonColor">#BDBDBD</color>
 </resources>

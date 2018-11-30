@@ -25,9 +25,9 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         val speedDialView = findViewById<SpeedDialView>(R.id.speedDial)
-        addSpeedDialItem(speedDialView, R.id.fab_edit, R.drawable.baseline_edit_white_48, "Edit")
-        addSpeedDialItem(speedDialView, R.id.fab_email, R.drawable.baseline_email_white_48, "Email")
-        addSpeedDialItem(speedDialView, R.id.fab_settings, R.drawable.baseline_add_circle_24, "Settings")
+        addSpeedDialItem(speedDialView, R.id.fab_edit, R.drawable.ic_edit_white_48dp, "Edit")
+        addSpeedDialItem(speedDialView, R.id.fab_email, R.drawable.ic_email_white_48dp, "Email")
+        addSpeedDialItem(speedDialView, R.id.fab_settings, R.drawable.ic_settings_white_48dp, "Settings")
 
         speedDialView.setOnActionSelectedListener { speedDialActionItem ->
             when (speedDialActionItem.id) {

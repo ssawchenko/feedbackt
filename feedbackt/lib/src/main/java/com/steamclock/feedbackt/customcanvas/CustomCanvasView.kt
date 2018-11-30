@@ -24,6 +24,17 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         Fused               // Path (draw) and numbers (tap) together
     }
 
+    interface CanvasListener {
+        fun onUndoValueChange(count: Int)
+        fun onRedoValueChange(count: Int)
+    }
+
+    var canvasListener: CanvasListener? = null
+    set(value) {
+        field = value
+        reportUndoRedoChanges()
+    }
+
     private var canvasUndoActions = LinkedList<CanvasAction>()
     private var canvasRedoActions = LinkedList<CanvasAction>()
 
@@ -55,6 +66,7 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         override fun addAction(action: CanvasAction) {
             log("Adding ${action.javaClass.name} to action list")
             canvasUndoActions.add(action)
+            reportUndoRedoChanges()
         }
     }
 
@@ -76,6 +88,7 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
             log("Calling undo for ${lastAction.javaClass.name}")
             lastAction.undo()
             canvasRedoActions.add(lastAction)
+            reportUndoRedoChanges()
         } catch (e: Exception) {
             // shhhhhhhh, it's ok.
         }
@@ -89,6 +102,7 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
             log("Calling redo for ${lastAction.javaClass.name}")
             lastAction.redo()
             canvasUndoActions.add(lastAction)
+            reportUndoRedoChanges()
         } catch (e: Exception) {
             // shhhhhhhh, it's ok.
         }
@@ -162,6 +176,13 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         pathActions.clearRedo()
         numberedAction.clearRedo()
         fusedAction.clearRedo()
+
+        reportUndoRedoChanges()
+    }
+
+    private fun reportUndoRedoChanges() {
+        canvasListener?.onUndoValueChange(canvasUndoActions.size)
+        canvasListener?.onRedoValueChange(canvasRedoActions.size)
     }
 
     companion object {

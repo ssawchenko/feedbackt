@@ -62,6 +62,21 @@ class EditFeedbacktActivity : AppCompatActivity() {
             // todo show error.
             showError()
         }
+
+        // Setup undo/redo button listeners
+        custom_canvas_view.canvasListener = object: CustomCanvasView.CanvasListener {
+            override fun onUndoValueChange(count: Int) {
+                updateUndoRedoButtonByCount(undo_button_layout, count)
+            }
+            override fun onRedoValueChange(count: Int) {
+                updateUndoRedoButtonByCount(redo_button_layout, count)
+            }
+        }
+    }
+
+    private fun updateUndoRedoButtonByCount(buttonLayout: View, count: Int) {
+        buttonLayout.isEnabled = count > 0
+        buttonLayout.alpha = if (count > 0) 1.0f else 0.6f
     }
 
     private fun getImageBounds(imageView: ImageView): RectF {
@@ -78,8 +93,8 @@ class EditFeedbacktActivity : AppCompatActivity() {
         custom_canvas_view.mode = CustomCanvasView.Mode.Fused
         bottom_actions.visibility = View.VISIBLE
         send_it_button.setOnClickListener { sendEdited() }
-        undo_button.setOnClickListener { custom_canvas_view.undo() }
-        redo_button.setOnClickListener { custom_canvas_view.redo() }
+        undo_button_layout.setOnClickListener { custom_canvas_view.undo() }
+        redo_button_layout.setOnClickListener { custom_canvas_view.redo() }
     }
 
     private fun sendEdited() {

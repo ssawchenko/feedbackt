@@ -27,13 +27,13 @@
             android:layout_weight="1"
             android:background="@drawable/selector_undo_redo_button_background">
 
-            <ImageView
-                android:id="@+id/undo_button_image"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:src="@drawable/ic_undo_white_48dp"
-                android:tint="@color/darkGrey"/>
+                android:text="Undo"
+                android:textAllCaps="true"
+                android:textColor="@color/darkGrey" />
 
         </RelativeLayout>
 
@@ -49,13 +49,36 @@
             android:layout_weight="1"
             android:background="@drawable/selector_undo_redo_button_background">
 
-            <ImageView
-                android:id="@+id/redo_button_image"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:src="@drawable/ic_redo_white_48p"
-                android:tint="@color/darkGrey"/>
+                android:text="Redo"
+                android:textAllCaps="true"
+                android:textColor="@color/darkGrey" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="@dimen/border_thickness"
+            android:layout_height="match_parent"
+            android:background="@color/darkGrey" />
+
+        <RelativeLayout
+            android:id="@+id/clear_button_layout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:background="@drawable/selector_undo_redo_button_background">
+
+            <TextView
+                android:id="@+id/clear_button_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="Clear"
+                android:textAllCaps="true"
+                android:textColor="@color/darkGrey" />
         </RelativeLayout>
 
         <View

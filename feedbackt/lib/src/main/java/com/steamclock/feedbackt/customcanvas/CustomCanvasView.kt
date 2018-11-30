@@ -10,6 +10,7 @@ import com.steamclock.feedbackt.customcanvas.actions.CanvasAction
 import com.steamclock.feedbackt.customcanvas.actions.FusedAction
 import com.steamclock.feedbackt.customcanvas.actions.NumberedAction
 import com.steamclock.feedbackt.customcanvas.actions.PathAction
+import kotlinx.android.synthetic.main.content_edit_feedbackt.view.*
 import java.lang.Exception
 import java.util.*
 
@@ -110,10 +111,28 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         invalidate()
     }
 
+    fun clear() {
+        // Clear common undo/redo
+        canvasUndoActions.clear()
+        canvasRedoActions.clear()
+
+        // Clear specific actions
+        pathActions.clearAll()
+        numberedAction.clearAll()
+        fusedAction.clearAll()
+
+        // Update canvas and report back
+        invalidate()
+        reportUndoRedoChanges()
+    }
+
     fun getEmailContent(): String? {
-        // Currently fusedAction handles both valid actions.
-        // If we add more actions in the future this may need to get changed.
-        return fusedAction.emailContent()
+        return when(mode) {
+            Mode.None -> null
+            Mode.Drawing -> pathActions.emailContent()
+            Mode.NumberedBullets -> numberedAction.emailContent()
+            Mode.Fused -> fusedAction.emailContent()
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {

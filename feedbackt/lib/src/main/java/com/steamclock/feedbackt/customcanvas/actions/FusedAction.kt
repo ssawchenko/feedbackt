@@ -103,6 +103,11 @@ class FusedAction(context: Context, canvasProxy: CanvasProxy): CanvasAction(canv
         numberedAction.clearRedo()
     }
 
+    override fun clearAll() {
+        pathAction.clearAll()
+        numberedAction.clearAll()
+    }
+
     override fun emailContent(): String? {
         val pathContent = pathAction.emailContent()
         val numbersContent = numberedAction.emailContent()

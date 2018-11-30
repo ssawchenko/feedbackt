@@ -95,6 +95,7 @@ class EditFeedbacktActivity : AppCompatActivity() {
         send_it_button.setOnClickListener { sendEdited() }
         undo_button_layout.setOnClickListener { custom_canvas_view.undo() }
         redo_button_layout.setOnClickListener { custom_canvas_view.redo() }
+        clear_button_layout.setOnClickListener { custom_canvas_view.clear() }
     }
 
     private fun sendEdited() {

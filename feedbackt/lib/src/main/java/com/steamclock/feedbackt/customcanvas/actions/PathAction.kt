@@ -93,6 +93,11 @@ class PathAction(canvasProxy: CanvasProxy, lineColor: Int = Color.RED): CanvasAc
         redoPaths.clear()
     }
 
+    override fun clearAll() {
+        redoPaths.clear()
+        undoPaths.clear()
+    }
+
     //-------------------------------------------
     // Private
     //-------------------------------------------

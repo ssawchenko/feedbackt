@@ -87,6 +87,12 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
         nextNum = undoItems.size + 1
     }
 
+    override fun clearAll() {
+        undoItems.clear()
+        redoItems.clear()
+        nextNum = 1
+    }
+
     override fun emailContent(): String? {
         val numberOfBullets = undoItems.count()
         if (numberOfBullets == 0) {

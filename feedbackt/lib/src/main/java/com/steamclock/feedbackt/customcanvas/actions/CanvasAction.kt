@@ -13,6 +13,7 @@ abstract class CanvasAction(val canvasProxy: CanvasProxy) {
     open fun undo(keep: Boolean = true) {}
     open fun redo() {}
     open fun clearRedo() {}
+    open fun clearAll() {}
 
     // Proxied canvas interactions
     open fun draw(canvas: Canvas) {}

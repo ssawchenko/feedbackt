@@ -1,14 +1,23 @@
 package com.steamclock.feedbacktsample.sample
 
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.steamclock.feedbacktsample.R
 import kotlinx.android.synthetic.main.activity_main.*
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
 import com.steamclock.feedbackt.Feedbackt
+import kotlinx.android.synthetic.main.view_feedbackt_options.view.*
 
 class MainActivity : AppCompatActivity() {
+
+    var settingsDialog: AlertDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,16 +25,9 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         val speedDialView = findViewById<SpeedDialView>(R.id.speedDial)
-        speedDialView.addActionItem(SpeedDialActionItem.Builder(R.id.fab_edit, R.drawable.baseline_edit_white_48)
-            .setLabel("Edit")
-            .setLabelColor(resources.getColor(android.R.color.white))
-            .setLabelBackgroundColor(resources.getColor(R.color.colorAccent))
-            .create())
-        speedDialView.addActionItem(SpeedDialActionItem.Builder(R.id.fab_email, R.drawable.baseline_email_white_48)
-            .setLabel("Email")
-            .setLabelBackgroundColor(resources.getColor(R.color.colorAccent))
-            .setLabelColor(resources.getColor(android.R.color.white))
-            .create())
+        addSpeedDialItem(speedDialView, R.id.fab_edit, R.drawable.baseline_edit_white_48, "Edit")
+        addSpeedDialItem(speedDialView, R.id.fab_email, R.drawable.baseline_email_white_48, "Email")
+        addSpeedDialItem(speedDialView, R.id.fab_settings, R.drawable.baseline_add_circle_24, "Settings")
 
         speedDialView.setOnActionSelectedListener { speedDialActionItem ->
             when (speedDialActionItem.id) {
@@ -37,18 +39,64 @@ class MainActivity : AppCompatActivity() {
                     Feedbackt.grabFeedbackAndEdit(this)
                     false
                 }
+                R.id.fab_settings -> {
+                    showSettingsDialog()
+                    false
+                }
                 else -> true
             }
         }
 
     }
 
+    private fun addSpeedDialItem(speedDialView: SpeedDialView, itemId: Int, itemDrawableId: Int, label: String) {
+        speedDialView.addActionItem(SpeedDialActionItem.Builder(itemId, itemDrawableId)
+            .setLabel(label)
+            .setLabelColor(ContextCompat.getColor(this, android.R.color.white))
+            .setLabelBackgroundColor(ContextCompat.getColor(this, R.color.colorAccent))
+            .create())
+    }
 
+    override fun onPause() {
+        super.onPause()
+        settingsDialog?.dismiss()
+    }
 
-//    .setFabBackgroundColor(ResourcesCompat.getColor(getResources(), R.color.material_white_1000, getTheme()))
-//    .setFabImageTintColor(ResourcesCompat.getColor(getResources(), R.color.inbox_primary, getTheme()))
-//    .setLabel(getString(R.string.label_custom_color))
-//    .setLabelColor(Color.WHITE)
-//    .setLabelBackgroundColor(ResourcesCompat.getColor(getResources(), R.color.inbox_primary, getTheme()))
-//    .setLabelClickable(false)
+    private fun showSettingsDialog() {
+        val alertBuilder = AlertDialog.Builder(this)
+        val dialogView = View.inflate(this, R.layout.view_feedbackt_options, null)
+        alertBuilder.setView(dialogView)
+
+        settingsDialog?.dismiss()
+        settingsDialog = alertBuilder.create()
+        settingsDialog?.let { dialog ->
+
+            dialogView.send_to_email.setText(Feedbackt.email)
+            dialogView.send_to_email.onTextChanged { text -> Feedbackt.email = text }
+
+            dialogView.email_title.setText(Feedbackt.emailTitle)
+            dialogView.email_title.onTextChanged { text -> Feedbackt.emailTitle = text }
+
+            dialogView.email_content.setText(Feedbackt.emailContent)
+            dialogView.email_content.onTextChanged { text -> Feedbackt.emailContent = text }
+
+            dialogView.add_device_info.isChecked = Feedbackt.addDeviceInfo
+            dialogView.add_device_info.setOnCheckedChangeListener { _, isChecked -> Feedbackt.addDeviceInfo = isChecked }
+
+            dialogView.add_edit_action_info.isChecked = Feedbackt.addActionContent
+            dialogView.add_edit_action_info.setOnCheckedChangeListener { _, isChecked -> Feedbackt.addActionContent = isChecked }
+
+            dialog.setCanceledOnTouchOutside(true)
+            dialog.show()
+
+        }
+    }
+
+    fun EditText.onTextChanged(onTextChanged: (String) -> Unit) {
+        this.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { onTextChanged(p0.toString())}
+            override fun afterTextChanged(editable: Editable?) {}
+        })
+    }
 }

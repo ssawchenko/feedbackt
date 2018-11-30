@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat.checkSelfPermission
 import com.kaopiz.kprogresshud.KProgressHUD
 import com.squareup.seismic.ShakeDetector
 import com.steamclock.feedbackt.activities.EditFeedbacktActivity
+import com.steamclock.feedbackt.customcanvas.CustomCanvasView
 import com.steamclock.feedbackt.extensions.convertToBitmap
 import com.steamclock.feedbackt.extensions.prepForBitmapConversion
 import com.steamclock.feedbackt.extensions.saveAsPng
@@ -33,16 +34,22 @@ import java.lang.ref.WeakReference
  */
 object Feedbackt {
 
-    val TAG = "Feedbackt"
-    private val email = "shayla@steamclock.com"
-    private val emailTitle = "Sending feedback"
+    const val TAG = "Feedbackt"
+    private const val storedImageName = "feedbackt.png"
+    
+    var email: String? = null
+    var emailTitle = "Sending feedback"
+    var emailContent: String? = null
+    var addDeviceInfo = true
+    var addActionContent = true
+    var editMode = EditFeedbacktActivity.defaultMode
 
-    // todo static field leaks, may want to move Feedbackt out of the singleton pattern.
     private var commonHud: WeakReference<KProgressHUD>? = null
     private var currentActivity: WeakReference<Activity>? = null
     private var shakeDetector: ShakeDetector? = null
     private var grabInProgress = false
 
+    // Application wide detection
     private var autoDetectMultitouch = false
     private var autoDetetctShake = false
 
@@ -213,7 +220,7 @@ object Feedbackt {
         DoAsync<Uri?>()
             .doInBackground {
                 val bitmap = view?.convertToBitmap()
-                bitmap?.saveAsPng(activity, "feedbackt.png")
+                bitmap?.saveAsPng(activity, storedImageName)
             }.doOnPostExectute { uri ->
                 hideHud()
                 grabInProgress = false
@@ -228,7 +235,7 @@ object Feedbackt {
     }
 
     fun emailBitmap(activity: Activity, bitmap: Bitmap, text: String = "") {
-        bitmap.saveAsPng(activity, "feedbackt.png")?.let { uri ->
+        bitmap.saveAsPng(activity, storedImageName)?.let { uri ->
             hideHud()
             createEmailBitmapWithString(text).invoke(activity, uri)
         } ?: run {
@@ -239,12 +246,21 @@ object Feedbackt {
     }
 
     private fun createEmailBitmapWithString(text: String?): (context: Context, uri: Uri) -> Unit {
-        val messageText = "${generateGreetingText()}\n\n\n${text ?: ""}\n\n${generateDeviceDetailsText()}"
+
+        val stringBuilder = StringBuilder()
+        stringBuilder.appendln(generateGreetingText())
+        stringBuilder.append("")
+        if (addActionContent) stringBuilder.appendln(text)
+        if (addDeviceInfo) stringBuilder.appendln(generateDeviceDetailsText())
+        if (emailContent != null) stringBuilder.appendln(emailContent)
+        val messageText = stringBuilder.toString()
+
         return { context, uri ->
             val emailIntent = Intent(Intent.ACTION_SEND)
 
             emailIntent.type = "image/png"
-            emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+
+            if (email != null) emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, emailTitle)
             emailIntent.putExtra(Intent.EXTRA_TEXT, messageText)
             emailIntent.putExtra(Intent.EXTRA_STREAM, uri)
@@ -256,7 +272,7 @@ object Feedbackt {
     }
 
     private fun launchEdit(context: Context, uri: Uri) {
-        val launchIntent = EditFeedbacktActivity.newIntent(context, uri)
+        val launchIntent = EditFeedbacktActivity.newIntent(context, uri, editMode)
         context.startActivity(launchIntent)
     }
 

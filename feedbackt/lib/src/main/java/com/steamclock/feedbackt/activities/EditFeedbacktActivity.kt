@@ -2,9 +2,11 @@ package com.steamclock.feedbackt.activities
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.steamclock.feedbackt.Constants
 import com.steamclock.feedbackt.Feedbackt
@@ -12,10 +14,6 @@ import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.customcanvas.CustomCanvasView
 import kotlinx.android.synthetic.main.activity_edit_feedbackt.*
 import kotlinx.android.synthetic.main.content_edit_feedbackt.*
-import androidx.constraintlayout.solver.widgets.WidgetContainer.getBounds
-import android.graphics.RectF
-import android.graphics.drawable.Drawable
-import android.widget.ImageView
 
 
 class EditFeedbacktActivity : AppCompatActivity() {
@@ -29,13 +27,10 @@ class EditFeedbacktActivity : AppCompatActivity() {
         setContentView(R.layout.activity_edit_feedbackt)
         setSupportActionBar(toolbar)
 
-        // Resize canvases so that the user cannot "draw outside"
+        // Resize canvases once the original_image has scaled itself...
         original_image.post {
-
+            // Grab the image bounds to determine scaled width and height.
             val bounds = getImageBounds(original_image)
-
-            //val boundsWidth = original_image.measuredHeight
-            //val boundsHeight = original_image.measuredWidth
             val boundsWidth = bounds.width().toInt()
             val boundsHeight = bounds.height().toInt()
 
@@ -60,6 +55,7 @@ class EditFeedbacktActivity : AppCompatActivity() {
         // Setup canvas
         try {
             photoUri = Uri.parse(intent.getStringExtra(Constants.EXTRA_BITMAP_URI))
+            custom_canvas_view.mode = (intent.getSerializableExtra(Constants.EXTRA_CUSTOM_CANVAS_MODE) ?: EditFeedbacktActivity.defaultMode) as CustomCanvasView.Mode
             original_image.setImageURI(photoUri)
             setupCanvas()
         } catch (e: Exception) {
@@ -95,9 +91,12 @@ class EditFeedbacktActivity : AppCompatActivity() {
     // Companion
     //---------------------------------------------------
     companion object {
-        fun newIntent(context: Context, uri: Uri): Intent {
+        val defaultMode = CustomCanvasView.Mode.Fused
+
+        fun newIntent(context: Context, uri: Uri, mode: CustomCanvasView.Mode = EditFeedbacktActivity.defaultMode): Intent {
             val intent = Intent(context, EditFeedbacktActivity::class.java)
             intent.putExtra(Constants.EXTRA_BITMAP_URI, uri.toString())
+            intent.putExtra(Constants.EXTRA_CUSTOM_CANVAS_MODE, mode)
             return intent
         }
     }

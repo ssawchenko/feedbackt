@@ -32,23 +32,10 @@ project.ext {
     compileSdk = 28
     buildTools = "28.0.2"
 
+    appcompat = "1.0.2"
+    material = "1.1.0-alpha01"
     coroutines = "0.26.0"
-    androidx = "1.0.0"
     lifecycles = "2.0.0"
+    recyclerview = "1.0.0"
     constraintLayout = "2.0.0-alpha2"
-
-    retrofit = "2.4.0"
-    retrofitHttpLogging = "3.10.0"
-    retrofitCoroutines = "1.0.0"
-//
-//    dagger = "2.17"
-//    fastadapter = "3.2.7"
-//    fabric = "2.9.5"
-//    intercom = "5.1.1"
-//    firebaseCore = "16.0.3"
-//    firebaseMsg = "17.3.2" // Intercom requires 11.+
-//    amplitude = "2.18.1"
-//    timber = "4.7.1"
-//    MPAndroidChart = "v3.0.3"
-//    goldfinger = "1.1.1"
 }

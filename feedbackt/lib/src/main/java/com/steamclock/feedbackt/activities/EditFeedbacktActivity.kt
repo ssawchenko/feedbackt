@@ -7,11 +7,13 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.steamclock.feedbackt.Constants
 import com.steamclock.feedbackt.Feedbackt
 import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.customcanvas.CustomCanvasView
+import com.steamclock.feedbackt.utils.FeedbacktSharedPreferences
 import kotlinx.android.synthetic.main.activity_edit_feedbackt.*
 import kotlinx.android.synthetic.main.content_edit_feedbackt.*
 
@@ -22,10 +24,14 @@ class EditFeedbacktActivity : AppCompatActivity() {
     private var height: Int? = null
     private var width: Int? = null
 
+    private var dialog: AlertDialog? = null
+    private lateinit var preferences: FeedbacktSharedPreferences
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_feedbackt)
         setSupportActionBar(toolbar)
+        preferences = FeedbacktSharedPreferences(this)
 
         // Resize canvases once the original_image has scaled itself...
         original_image.post {
@@ -72,6 +78,13 @@ class EditFeedbacktActivity : AppCompatActivity() {
                 updateUndoRedoButtonByCount(redo_button_layout, count)
             }
         }
+
+        if (!preferences.hasShownDetailsDialog) showEditInstructions()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        dialog?.dismiss()
     }
 
     private fun updateUndoRedoButtonByCount(buttonLayout: View, count: Int) {
@@ -101,6 +114,19 @@ class EditFeedbacktActivity : AppCompatActivity() {
     private fun sendEdited() {
         val view = findViewById<View>(R.id.edited_image_layout)
         Feedbackt.grabFeedbackAndEmail(this, view, custom_canvas_view.getEmailContent())
+    }
+
+    private fun showEditInstructions() {
+        dialog?.dismiss()
+        dialog = AlertDialog.Builder(this).create()
+        dialog?.let { dialog ->
+            dialog.setTitle("How to edit your Feedbackt")
+            dialog.setMessage("* Tap to drop a numbered bullet\n* Draw to highlight specific areas\n* 'Send it' and add details in your email")
+            dialog.setButton(AlertDialog.BUTTON_POSITIVE, "OK") { _, _ ->
+                preferences.hasShownDetailsDialog = true
+            }
+            dialog.show()
+        }
     }
 
     //---------------------------------------------------

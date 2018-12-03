@@ -26,6 +26,7 @@ import com.steamclock.feedbackt.extensions.prepForBitmapConversion
 import com.steamclock.feedbackt.extensions.saveAsPng
 import com.steamclock.feedbackt.extensions.setOnXLongPress
 import com.steamclock.feedbackt.utils.DoAsync
+import com.steamclock.feedbackt.utils.ProgressHUD
 import java.lang.StringBuilder
 import java.lang.ref.WeakReference
 
@@ -44,7 +45,7 @@ object Feedbackt {
     var addActionContent = true
     var editMode = EditFeedbacktActivity.defaultMode
 
-    private var commonHud: WeakReference<KProgressHUD>? = null
+    private var commonHud: WeakReference<ProgressHUD>? = null
     private var currentActivity: WeakReference<Activity>? = null
     private var shakeDetector: ShakeDetector? = null
     private var grabInProgress = false
@@ -167,19 +168,14 @@ object Feedbackt {
 
     fun showHud(activity: Activity, text: Any? = null) {
         hideHud()
-        commonHud = WeakReference(KProgressHUD.create(activity)
-            .setStyle(KProgressHUD.Style.SPIN_INDETERMINATE)
-            .setCancellable(true)
-            .setAnimationSpeed(2)
-            .setBackgroundColor(ContextCompat.getColor(activity, R.color.colorAccent))
-            .setDimAmount(0.5f))
+        commonHud = WeakReference(ProgressHUD.create(activity))
 
         text?.let {
             if (it is String) {
-                commonHud?.get()?.setLabel(it)
+                commonHud?.get()?.setText(it)
             }
             if (it is Int) {
-                commonHud?.get()?.setLabel(activity.getString(it))
+                commonHud?.get()?.setText(activity.getString(it))
             }
         }
         commonHud?.get()?.show()

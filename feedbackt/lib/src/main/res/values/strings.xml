@@ -4,4 +4,10 @@
     <string name="app_name">Feedbackt</string>
     <string name="title_activity_edit_feedbackt">Edit Feedbackt</string>
     <string name="numbered_action_email_content_header"></string>
+
+    <string name="undo">Undo</string>
+    <string name="redo">Redo</string>
+    <string name="clear">Clear</string>
+    <string name="send_it">Send it</string>
+
 </resources>

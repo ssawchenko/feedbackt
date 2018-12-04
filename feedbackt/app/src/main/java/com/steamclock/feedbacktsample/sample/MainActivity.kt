@@ -8,10 +8,10 @@ import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.steamclock.feedbacktsample.R
-import kotlinx.android.synthetic.main.activity_main.*
 import com.leinardi.android.speeddial.SpeedDialActionItem
 import com.leinardi.android.speeddial.SpeedDialView
+import com.steamclock.feedbacktsample.R
+import kotlinx.android.synthetic.main.activity_main.*
 import com.steamclock.feedbackt.Feedbackt
 import kotlinx.android.synthetic.main.view_feedbackt_options.view.*
 

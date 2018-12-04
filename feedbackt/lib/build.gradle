@@ -41,8 +41,6 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$appcompat"
     implementation "androidx.recyclerview:recyclerview:$recyclerview"
     implementation "androidx.constraintlayout:constraintlayout:$constraintLayout"
-
-    implementation 'com.squareup:seismic:1.0.2'
 }
 repositories {
     mavenCentral()

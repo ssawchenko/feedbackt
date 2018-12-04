@@ -4,30 +4,25 @@ import android.Manifest
 import android.app.Activity
 import android.app.Application
 import android.content.Context
-import android.content.Context.SENSOR_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
-import com.kaopiz.kprogresshud.KProgressHUD
-import com.squareup.seismic.ShakeDetector
 import com.steamclock.feedbackt.activities.EditFeedbacktActivity
-import com.steamclock.feedbackt.customcanvas.CustomCanvasView
 import com.steamclock.feedbackt.extensions.convertToBitmap
 import com.steamclock.feedbackt.extensions.prepForBitmapConversion
 import com.steamclock.feedbackt.extensions.saveAsPng
 import com.steamclock.feedbackt.extensions.setOnXLongPress
 import com.steamclock.feedbackt.utils.DoAsync
 import com.steamclock.feedbackt.utils.ProgressHUD
-import java.lang.StringBuilder
+import com.steamclock.feedbackt.utils.ShakeDetector
 import java.lang.ref.WeakReference
 
 /**
@@ -47,6 +42,7 @@ object Feedbackt {
 
     private var commonHud: WeakReference<ProgressHUD>? = null
     private var currentActivity: WeakReference<Activity>? = null
+
     private var shakeDetector: ShakeDetector? = null
     private var grabInProgress = false
 
@@ -137,13 +133,16 @@ object Feedbackt {
     }
 
     fun enableShakeToActivateOnActivity(activity: Activity) {
-        val sensorManager = activity.getSystemService(SENSOR_SERVICE) as SensorManager?
-        shakeDetector = ShakeDetector {
-            if (activity.isFinishing) return@ShakeDetector
-            Feedbackt.grabFeedbackAndEdit(activity)
-        }
-        shakeDetector?.setSensitivity(ShakeDetector.SENSITIVITY_LIGHT)
-        shakeDetector?.start(sensorManager)
+        shakeDetector = ShakeDetector(activity, object: ShakeDetector.ShakeListener {
+            override fun onShakeDetected() {
+                Feedbackt.grabFeedbackAndEdit(activity)
+            }
+
+            override fun onShakeNotSupported() {
+                if (activity.isFinishing != true) return
+                Toast.makeText(activity, "Accelerometer not supported on device; cannot launch Feedbackt by shake", Toast.LENGTH_LONG).show()
+            }
+        })
     }
 
     fun disableShakeToActivateOnActivity() {

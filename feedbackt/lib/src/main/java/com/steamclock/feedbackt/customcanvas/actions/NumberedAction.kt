@@ -26,8 +26,7 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
     private var paint: Paint = Paint()
     private val numberedViewSize = 30.px
     private val placementOffset = numberedViewSize / 2
-    private val numberedView: View =
-        LayoutInflater.from(context).inflate(R.layout.view_numbered_action, null)
+    private val numberedView: View = LayoutInflater.from(context).inflate(R.layout.view_numbered_action, null)
 
     init {
         paint.isAntiAlias = true

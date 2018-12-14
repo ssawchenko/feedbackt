@@ -319,6 +319,10 @@ object Feedbackt {
         }
 
         override fun onActivityResumed(activity: Activity?) {
+            if (activity is EditFeedbacktActivity) {
+                return
+            }
+
             activity?.let {
                 if (autoDetectMultitouch) enableMultiTouchToActivateOnActivity(it)
                 if (autoDetetctShake) enableShakeToActivateOnActivity(it)

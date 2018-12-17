@@ -10,20 +10,20 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.steamclock.feedbackt.activities.EditFeedbacktActivity
-import com.steamclock.feedbackt.extensions.convertToBitmap
-import com.steamclock.feedbackt.extensions.prepForBitmapConversion
-import com.steamclock.feedbackt.extensions.saveAsPng
-import com.steamclock.feedbackt.extensions.setOnXLongPress
 import com.steamclock.feedbackt.utils.DoAsync
 import com.steamclock.feedbackt.utils.ProgressHUD
 import com.steamclock.feedbackt.utils.ShakeDetector
 import java.lang.ref.WeakReference
+import com.steamclock.feedbackt.utils.ExternalStorage
+import com.steamclock.feedbackt.extensions.*
+
 
 /**
  * Feedbackt Singleton
@@ -31,7 +31,7 @@ import java.lang.ref.WeakReference
 object Feedbackt {
 
     const val TAG = "Feedbackt"
-    private const val storedImageName = "feedbackt.png"
+    private const val storedImageName = "feedbackt"
     
     var email: String? = null
     var emailTitle = "Sending feedback"
@@ -165,6 +165,10 @@ object Feedbackt {
         grabFeedbackAndRun(activity, view, ::viewBitmap)
     }
 
+    fun grabFeedbackAndSave(activity: Activity, view: View? = getRootView(activity), fileName: String) {
+        grabFeedbackAndRun(activity, view, saveFileWithFileName(fileName))
+    }
+
     fun showHud(activity: Activity, text: Any? = null) {
         hideHud()
         commonHud = WeakReference(ProgressHUD.create(activity))
@@ -215,7 +219,7 @@ object Feedbackt {
         DoAsync<Uri?>()
             .doInBackground {
                 val bitmap = view?.convertToBitmap()
-                bitmap?.saveAsPng(activity, storedImageName)
+                bitmap?.saveAsPrivatePng(activity, storedImageName)
             }.doOnPostExectute { uri ->
                 hideHud()
                 grabInProgress = false
@@ -230,7 +234,7 @@ object Feedbackt {
     }
 
     fun emailBitmap(activity: Activity, bitmap: Bitmap, text: String = "") {
-        bitmap.saveAsPng(activity, storedImageName)?.let { uri ->
+        bitmap.saveAsPrivatePng(activity, storedImageName)?.let { uri ->
             hideHud()
             createEmailBitmapWithString(text).invoke(activity, uri)
         } ?: run {
@@ -241,7 +245,6 @@ object Feedbackt {
     }
 
     private fun createEmailBitmapWithString(text: String?): (context: Context, uri: Uri) -> Unit {
-
         val stringBuilder = StringBuilder()
         stringBuilder.appendln(generateGreetingText())
         stringBuilder.append("")
@@ -278,6 +281,20 @@ object Feedbackt {
         viewIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
         viewIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         context.startActivity(Intent.createChooser(viewIntent, "View Screenshot"))
+    }
+
+    private fun saveFileWithFileName(fileName: String): (context: Context, uri: Uri) -> Unit {
+        return { context, uri ->
+            hideHud()
+            val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+            bitmap.saveAsPublicPng(context, fileName)?.let { uri ->
+                // todo? not an error...
+            } ?: run {
+                hideHud()
+                Log.e(TAG, "generateAndSendScreenshot failed")
+                // todo error
+            }
+        }
     }
 
     private fun generateGreetingText(): String {

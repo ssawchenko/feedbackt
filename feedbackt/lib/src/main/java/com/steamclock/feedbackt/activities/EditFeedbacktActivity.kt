@@ -6,6 +6,7 @@ import android.graphics.RectF
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import android.widget.CalendarView
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +17,8 @@ import com.steamclock.feedbackt.customcanvas.CustomCanvasView
 import com.steamclock.feedbackt.utils.FeedbacktSharedPreferences
 import kotlinx.android.synthetic.main.activity_edit_feedbackt.*
 import kotlinx.android.synthetic.main.content_edit_feedbackt.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 class EditFeedbacktActivity : AppCompatActivity() {
@@ -26,6 +29,7 @@ class EditFeedbacktActivity : AppCompatActivity() {
 
     private var dialog: AlertDialog? = null
     private lateinit var preferences: FeedbacktSharedPreferences
+    private var shareMethodBottomSheet: EditFeedbackShareBottomSheet? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,9 +115,35 @@ class EditFeedbacktActivity : AppCompatActivity() {
         clear_button_layout.setOnClickListener { custom_canvas_view.clear() }
     }
 
+    private fun getFileName(): String {
+        val now = Calendar.getInstance().time
+        var fileName = "Feedbackt_"
+
+        fileName += try {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
+            dateFormat.format(now)
+        } catch (e: java.lang.Exception) {
+            now.toString()
+        }
+
+        return fileName
+    }
+
     private fun sendEdited() {
-        val view = findViewById<View>(R.id.edited_image_layout)
-        Feedbackt.grabFeedbackAndEmail(this, view, custom_canvas_view.getEmailContent())
+        shareMethodBottomSheet?.dismiss()
+        shareMethodBottomSheet = EditFeedbackShareBottomSheet.newInstance()
+        shareMethodBottomSheet?.methodSelectionListener = shareMethodSelectionListener
+        shareMethodBottomSheet?.show(supportFragmentManager, "ShareMethodBottomSheetFragment")
+    }
+
+    private val shareMethodSelectionListener = object: EditFeedbackShareBottomSheet.MethodSelectionListener {
+        override fun onSaveToGallery() {
+            Feedbackt.grabFeedbackAndSave(this@EditFeedbacktActivity, edited_image_layout, getFileName())
+        }
+
+        override fun onEmail() {
+            Feedbackt.grabFeedbackAndEmail(this@EditFeedbacktActivity, edited_image_layout, custom_canvas_view.getEmailContent())
+        }
     }
 
     private fun showEditInstructions() {

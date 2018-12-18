@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.provider.MediaStore
 import android.util.Log
 import android.view.View
@@ -165,13 +166,32 @@ object Feedbackt {
         grabFeedbackAndRun(activity, view, ::viewBitmap)
     }
 
-    fun grabFeedbackAndSave(activity: Activity, view: View? = getRootView(activity), fileName: String) {
-        grabFeedbackAndRun(activity, view, saveFileWithFileName(fileName))
+    fun grabFeedbackAndSave(activity: Activity,
+                            view: View? = getRootView(activity),
+                            fileName: String,
+                            onComplete: (Boolean) -> Unit) {
+        grabFeedbackAndRun(activity, view, saveFileWithFileName(activity, fileName, onComplete))
     }
 
-    fun showHud(activity: Activity, text: Any? = null) {
-        hideHud()
+    fun showHud(activity: Activity, text: Any? = null, showSpinner: Boolean = true) {
+        if (activity.isFinishing) return
+
+        val textString = when(text) {
+            is String -> text
+            is Int -> activity.getString(text)
+            else -> null
+        }
+
+        commonHud?.get()?.let {
+            if (it.isShowing()) {
+                it.setText(textString)
+                it.showSpinner(showSpinner)
+                return
+            }
+        }
+
         commonHud = WeakReference(ProgressHUD.create(activity))
+        commonHud?.get()?.showSpinner(showSpinner)
 
         text?.let {
             if (it is String) {
@@ -199,6 +219,10 @@ object Feedbackt {
         return activity.findViewById(android.R.id.content)
     }
 
+    /**
+     * runThis is responsible for calling hideHud after all follow up actions have
+     * been completed.
+     */
     private fun grabFeedbackAndRun(activity: Activity,
                                    view: View?,
                                    runThis: (context: Context, uri: Uri) -> Unit) {
@@ -221,7 +245,6 @@ object Feedbackt {
                 val bitmap = view?.convertToBitmap()
                 bitmap?.saveAsPrivatePng(activity, storedImageName)
             }.doOnPostExectute { uri ->
-                hideHud()
                 grabInProgress = false
 
                 if (uri == null) {
@@ -235,7 +258,6 @@ object Feedbackt {
 
     fun emailBitmap(activity: Activity, bitmap: Bitmap, text: String = "") {
         bitmap.saveAsPrivatePng(activity, storedImageName)?.let { uri ->
-            hideHud()
             createEmailBitmapWithString(text).invoke(activity, uri)
         } ?: run {
             hideHud()
@@ -245,6 +267,7 @@ object Feedbackt {
     }
 
     private fun createEmailBitmapWithString(text: String?): (context: Context, uri: Uri) -> Unit {
+        hideHud()
         val stringBuilder = StringBuilder()
         stringBuilder.appendln(generateGreetingText())
         stringBuilder.append("")
@@ -270,11 +293,13 @@ object Feedbackt {
     }
 
     private fun launchEdit(context: Context, uri: Uri) {
+        hideHud()
         val launchIntent = EditFeedbacktActivity.newIntent(context, uri, editMode)
         context.startActivity(launchIntent)
     }
 
     private fun viewBitmap(context: Context, uri: Uri) {
+        hideHud()
         val viewIntent = Intent()
         viewIntent.action = Intent.ACTION_VIEW
         viewIntent.setDataAndType(uri, "image/*")
@@ -283,14 +308,20 @@ object Feedbackt {
         context.startActivity(Intent.createChooser(viewIntent, "View Screenshot"))
     }
 
-    private fun saveFileWithFileName(fileName: String): (context: Context, uri: Uri) -> Unit {
+    private fun saveFileWithFileName(activity: Activity, fileName: String, onComplete: (Boolean) -> Unit): (context: Context, uri: Uri) -> Unit {
         return { context, uri ->
-            hideHud()
             val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+            showHud(activity, "Saving to Gallery...")
             bitmap.saveAsPublicPng(context, fileName)?.let { uri ->
-                // todo? not an error...
+                showHud(activity, "Save complete!", showSpinner = false)
+                // Let HUD show for 1s to let user read complete notification
+                Handler().postDelayed({
+                    hideHud()
+                    onComplete(true)
+                }, 1000)
             } ?: run {
                 hideHud()
+                onComplete(false)
                 Log.e(TAG, "generateAndSendScreenshot failed")
                 // todo error
             }

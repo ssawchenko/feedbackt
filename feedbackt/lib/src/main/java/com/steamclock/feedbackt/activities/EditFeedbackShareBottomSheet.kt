@@ -21,8 +21,15 @@ class EditFeedbackShareBottomSheet : BottomSheetDialogFragment() {
         dialog.setContentView(view)
 
         // Synthetic properties do not appear to be available here, use findViewById (Kotlin bug)?
-        view.findViewById<View>(R.id.share_email).setOnClickListener { methodSelectionListener?.onEmail() }
-        view.findViewById<View>(R.id.share_save_to_gallery).setOnClickListener { methodSelectionListener?.onSaveToGallery() }
+        view.findViewById<View>(R.id.share_email).setOnClickListener {
+            methodSelectionListener?.onEmail()
+            dismiss()
+        }
+
+        view.findViewById<View>(R.id.share_save_to_gallery).setOnClickListener {
+            methodSelectionListener?.onSaveToGallery()
+            dismiss()
+        }
 
         return dialog
     }

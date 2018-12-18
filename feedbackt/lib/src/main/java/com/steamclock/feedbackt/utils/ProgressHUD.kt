@@ -4,10 +4,12 @@ import android.app.Dialog
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.Window
 import android.view.WindowManager
+import com.steamclock.feedbackt.Feedbackt
 import com.steamclock.feedbackt.R
 import kotlinx.android.synthetic.main.layout_progress_hud.*
 
@@ -34,11 +36,30 @@ class ProgressHUD(context: Context) {
     }
 
     fun setText(text: String?) {
+        Log.v(Feedbackt.TAG, "ProgressHUD text: $text")
         dialog.text = text
+    }
+
+    fun showSpinner(show: Boolean) {
+        dialog.showSpinner = show
+    }
+
+    fun isShowing(): Boolean {
+        return dialog.isShowing
     }
 
     private inner class ProgressDialog(context: Context) : Dialog(context) {
         var text: String? = null
+            set(value) {
+                field = value
+                progress_hud_text?.text = value
+            }
+
+        var showSpinner: Boolean = true
+            set(value) {
+                field = value
+                progress_hud_spinner?.visibility = if (value) View.VISIBLE else View.GONE
+            }
 
         override fun onCreate(savedInstanceState: Bundle?) {
             super.onCreate(savedInstanceState)
@@ -61,6 +82,8 @@ class ProgressHUD(context: Context) {
             } ?: run {
                 progress_hud_text?.visibility = View.GONE
             }
+
+            progress_hud_spinner?.visibility = if (showSpinner) View.VISIBLE else View.GONE
         }
     }
 

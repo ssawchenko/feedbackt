@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.CalendarView
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.steamclock.feedbackt.Constants
@@ -138,7 +139,13 @@ class EditFeedbacktActivity : AppCompatActivity() {
 
     private val shareMethodSelectionListener = object: EditFeedbackShareBottomSheet.MethodSelectionListener {
         override fun onSaveToGallery() {
-            Feedbackt.grabFeedbackAndSave(this@EditFeedbacktActivity, edited_image_layout, getFileName())
+            Feedbackt.grabFeedbackAndSave(this@EditFeedbacktActivity, edited_image_layout, getFileName()) { success ->
+                if (success) {
+                    finish()
+                } else {
+                    Toast.makeText(this@EditFeedbacktActivity, "Failed to save Feedbackt to gallery", Toast.LENGTH_LONG).show()
+                }
+            }
         }
 
         override fun onEmail() {

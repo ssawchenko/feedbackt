@@ -257,6 +257,7 @@ object Feedbackt {
     }
 
     fun emailBitmap(activity: Activity, bitmap: Bitmap, text: String = "") {
+        hideHud()
         bitmap.saveAsPrivatePng(activity, storedImageName)?.let { uri ->
             createEmailBitmapWithString(text).invoke(activity, uri)
         } ?: run {
@@ -267,7 +268,6 @@ object Feedbackt {
     }
 
     private fun createEmailBitmapWithString(text: String?): (context: Context, uri: Uri) -> Unit {
-        hideHud()
         val stringBuilder = StringBuilder()
         stringBuilder.appendln(generateGreetingText())
         stringBuilder.append("")
@@ -277,6 +277,7 @@ object Feedbackt {
         val messageText = stringBuilder.toString()
 
         return { context, uri ->
+            hideHud()
             val emailIntent = Intent(Intent.ACTION_SEND)
 
             emailIntent.type = "image/png"

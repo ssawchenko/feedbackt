@@ -2,4 +2,5 @@
     <item type="id" name="fab_email" />
     <item type="id" name="fab_edit" />
     <item type="id" name="fab_settings" />
+    <item type="id" name="fab_start_stop_recording" />
 </resources>

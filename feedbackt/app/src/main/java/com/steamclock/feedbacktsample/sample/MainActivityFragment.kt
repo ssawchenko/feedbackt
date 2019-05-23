@@ -1,10 +1,12 @@
 package com.steamclock.feedbacktsample.sample
 
+import android.content.Intent
 import androidx.fragment.app.Fragment
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.steamclock.feedbackt.Feedbackt
 import com.steamclock.feedbacktsample.R
 
 /**
@@ -18,5 +20,4 @@ class MainActivityFragment : Fragment() {
     ): View? {
         return inflater.inflate(R.layout.fragment_main, container, false)
     }
-
 }

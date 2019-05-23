@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.Toast
@@ -22,8 +23,18 @@ import com.steamclock.feedbackt.utils.DoAsync
 import com.steamclock.feedbackt.utils.ProgressHUD
 import com.steamclock.feedbackt.utils.ShakeDetector
 import java.lang.ref.WeakReference
-import com.steamclock.feedbackt.utils.ExternalStorage
 import com.steamclock.feedbackt.extensions.*
+import android.content.Context.WINDOW_SERVICE
+import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
+import android.media.MediaRecorder
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
+import android.os.Environment
+import android.util.DisplayMetrics
+import android.view.WindowManager
+import java.io.File
+import java.lang.Exception
 
 
 /**
@@ -32,19 +43,69 @@ import com.steamclock.feedbackt.extensions.*
 object Feedbackt {
 
     const val TAG = "Feedbackt"
-    private const val storedImageName = "feedbackt"
-    
+
+    //-------------------------------
+    // Public
+    //-------------------------------
+    /**
+     * If set, this email address will be used by default as a send-to
+     */
     var email: String? = null
+
+    /**
+     * If set, this is the default title of the email sent
+     */
     var emailTitle = "Sending feedback"
+
+    /**
+     * If set, this String will be appended to the email sent.
+     * This can be useful if you want to send custom details along with the screenshot.
+     */
     var emailContent: String? = null
+
+    /**
+     * If true, device information will be automatically added to the email content being sent.
+     */
     var addDeviceInfo = true
+
+    /**
+     * If true, any actions made while editing the screenshot (ie. dropping numbers), will automatically
+     * add some content to the email as a guide for the user to add further information about the issue.
+     */
     var addActionContent = true
+
+    /**
+     * Default mode that the edit activity will open with; determines what actions are available
+     * to the user while editing.
+     */
     var editMode = EditFeedbacktActivity.defaultMode
 
+    //-------------------------------
+    // Private
+    //-------------------------------
+    /**
+     *
+     */
+    private const val storedImageName = "feedbackt"
+
+    /**
+     *
+     */
     private var commonHud: WeakReference<ProgressHUD>? = null
+
+    /**
+     *
+     */
     private var currentActivity: WeakReference<Activity>? = null
 
+    /**
+     *
+     */
     private var shakeDetector: ShakeDetector? = null
+
+    /**
+     *
+     */
     private var grabInProgress = false
 
     // Application wide detection
@@ -136,7 +197,12 @@ object Feedbackt {
     fun enableShakeToActivateOnActivity(activity: Activity) {
         shakeDetector = ShakeDetector(activity, object: ShakeDetector.ShakeListener {
             override fun onShakeDetected() {
-                Feedbackt.grabFeedbackAndEdit(activity)
+
+                // todo... put back in
+                //Feedbackt.grabFeedbackAndEdit(activity)
+
+
+                startCapture(activity)
             }
 
             override fun onShakeNotSupported() {
@@ -342,20 +408,40 @@ object Feedbackt {
         return contentBuilder.toString()
     }
 
-    private fun requestStoragePermissions(context: Activity) {
+
+    // Permissions
+    private fun requestPermission(context: Activity, permission: String, requestCode: Int) {
         if (Build.VERSION.SDK_INT >= 23) {
-            if (checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED) {
-            } else {
-                ActivityCompat.requestPermissions(context, arrayOf (Manifest.permission.WRITE_EXTERNAL_STORAGE), 1)
-            }
+            if (hasPermission(context, permission)) return
+            ActivityCompat.requestPermissions(context, arrayOf (permission), requestCode)
         }
     }
 
-    private fun hasStoragePermissions(context: Activity): Boolean {
+    private fun hasPermission(context: Activity, permission: String): Boolean {
         if (Build.VERSION.SDK_INT >= 23) {
-            return checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+            return checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
         }
         return true
+    }
+
+    private const val REQUEST_WRITE_EXTERNAL_STORAGE_CODE = 10
+    private fun hasStoragePermissions(context: Activity) = hasPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+    private fun requestStoragePermissions(context: Activity) = requestPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE, REQUEST_WRITE_EXTERNAL_STORAGE_CODE)
+
+    private const val REQUEST_ACTION_MANAGE_OVERLAY_PERMISSION_CODE = 11
+    private fun hasOverlayPermissions(context: Activity): Boolean {
+        if (Build.VERSION.SDK_INT >= 23) { return Settings.canDrawOverlays(context) }
+        return false
+    }
+
+    private fun requestOverlayPermissions(context: Activity) {
+        if (Build.VERSION.SDK_INT >= 23) {
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                Uri.parse("package:${context.applicationContext.packageName}")
+            )
+            context.startActivityForResult(intent, REQUEST_ACTION_MANAGE_OVERLAY_PERMISSION_CODE)
+        }
     }
 
     private val applicationLifecycleListener = object: Application.ActivityLifecycleCallbacks {
@@ -389,4 +475,201 @@ object Feedbackt {
 
         override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) {}
     }
+
+//    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+//
+//        if (requestCode == REQUEST_ACTION_MANAGE_OVERLAY_PERMISSION_CODE) {
+//
+//            if (Build.VERSION.SDK_INT >= 23) {
+//                if (!Settings.canDrawOverlays(currentActivity)) {
+//                    // SYSTEM_ALERT_WINDOW permission not granted...
+//                }
+//            }
+//
+//
+//        }
+//    }
+
+    //-------------------------------
+    // Video Capture
+    //-------------------------------
+    private var projectionManager: MediaProjectionManager? = null
+    private var mediaProjection: MediaProjection? = null
+    private var mediaRecorder: MediaRecorder? = null
+    private var virtualDisplay: VirtualDisplay? = null
+    private var displayMetrics: DisplayMetrics? = null
+    private var mediaProjectionCallback: MediaProjectionCallback? = null
+
+    private class MediaProjectionCallback : MediaProjection.Callback() {
+        override fun onStop() {
+            stopRecording()
+        }
+    }
+
+    private var isCapturing = false
+    fun startStopCapture(activity: Activity) {
+        if (isCapturing) {
+            stopRecording()
+        } else {
+            startCapture(activity)
+        }
+    }
+
+    fun startCapture(activity: Activity) {
+        Log.v("Video", "startCapture")
+        // Initialize what we can
+        getDisplayMetrics(activity)
+        projectionManager = activity.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+
+        // The rest will have to wait until we have permission...
+        if (mediaRecorder == null) {
+            requestScreenCapturePermission(activity)
+        } else {
+            startRecording()
+        }
+    }
+
+    private fun getDisplayMetrics(activity: Activity) {
+        Log.v("Video", "getDisplayMetrics")
+        displayMetrics = DisplayMetrics()
+        val wm = activity.getSystemService(WINDOW_SERVICE) as WindowManager
+        wm.defaultDisplay.getMetrics(displayMetrics)
+    }
+
+    private fun createMovieFilePath(filename: String): String {
+        Log.v("Video", "createMovieFilePath")
+        val rootMovieDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+        val feedbacktAlbumDir = File(rootMovieDir, "Feedbackt")
+
+        val saveDirectory = if (feedbacktAlbumDir.exists() || feedbacktAlbumDir.mkdirs()) {
+            feedbacktAlbumDir
+        } else {
+            rootMovieDir
+        }
+
+        return "$saveDirectory${File.separator}$filename.mp4"
+    }
+
+    private const val RequestScreenCapturePermissionCode = 12
+    private fun requestScreenCapturePermission(activity: Activity) {
+        Log.v("Video", "requestScreenCapturePermission")
+        activity.startActivityForResult(projectionManager?.createScreenCaptureIntent(), RequestScreenCapturePermissionCode)
+    }
+
+    private fun onScreenCapturePermissionGranted(resultCode: Int, data: Intent) {
+        Log.v("Video", "onScreenCapturePermissionGranted")
+        // Need to prove we have permissions to record.
+        mediaProjection = projectionManager?.getMediaProjection(resultCode, data)
+
+        if (mediaProjection == null) {
+            // fail
+        }
+        else if (initRecorder()) {
+            // start recording
+            startRecording()
+        }
+        else {
+            // fail
+        }
+    }
+
+    private fun initRecorder(): Boolean {
+        Log.v("Video", "initRecorder")
+        if (mediaRecorder == null) {
+
+            val recorder = MediaRecorder()
+            recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264)
+            recorder.setVideoEncodingBitRate(512 * 1000)
+            recorder.setVideoFrameRate(30)
+            recorder.setVideoSize(1000, 1000)
+            recorder.setOutputFile(createMovieFilePath("capture"))
+
+            try {
+                recorder.prepare()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                return false
+            }
+
+            mediaProjectionCallback = MediaProjectionCallback()
+            mediaProjection?.registerCallback(mediaProjectionCallback, null)
+
+            mediaProjection?.createVirtualDisplay(
+                "FeedbacktRecording",
+                displayMetrics?.widthPixels ?: 480,
+                displayMetrics?.heightPixels ?: 640,
+                displayMetrics?.densityDpi ?: DisplayMetrics.DENSITY_HIGH,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                recorder.surface, null, null
+            )
+
+            mediaRecorder = recorder
+        }
+
+        return true
+    }
+
+    private fun startRecording() {
+        Log.v("Video", "startRecording")
+        isCapturing = true
+        mediaRecorder?.start()
+    }
+
+    private fun stopRecording() {
+        Log.v("Video", "stopRecording")
+        isCapturing = false
+        mediaRecorder?.stop()
+        mediaRecorder?.reset()
+        virtualDisplay?.release()
+    }
+
+    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        Log.v("Video", "onActivityResult")
+        if (requestCode == RequestScreenCapturePermissionCode)     {
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                onScreenCapturePermissionGranted(resultCode, data)
+            }
+        }
+    }
+
+//    fun startCapture(activity: Activity) {
+//        if (!hasOverlayPermissions(activity)) {
+//            requestOverlayPermissions(activity)
+//            return
+//        }
+//
+//        val image = ImageView(activity)
+//        image.layoutParams = ViewGroup.LayoutParams(500, 500)
+//        val backGroundColor = activity.resources.getColor(R.color.primary_dark_material_dark)
+//        image.setBackgroundColor(backGroundColor)
+//
+////        params.width = 500
+////        params.height = 500
+////        params.width = ActionBar.LayoutParams.MATCH_PARENT
+////        params.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE
+////        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS  or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+////        params.format = PixelFormat.TRANSLUCENT
+////        params.gravity = Gravity.CENTER or Gravity.LEFT
+//
+//        val wm = activity.getSystemService(WINDOW_SERVICE) as WindowManager
+//
+//        val layoutType= if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+//        } else {
+//            WindowManager.LayoutParams.TYPE_PHONE
+//        }
+//
+//        val params = WindowManager.LayoutParams(
+//            WindowManager.LayoutParams.WRAP_CONTENT,
+//            WindowManager.LayoutParams.WRAP_CONTENT,
+//            layoutType,
+//            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+//            PixelFormat.TRANSLUCENT
+//        )
+//
+//        wm.addView(image, params)
+//    }
+
 }

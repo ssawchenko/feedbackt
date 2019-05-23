@@ -1,5 +1,6 @@
 package com.steamclock.feedbacktsample.sample
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -28,6 +29,7 @@ class MainActivity : AppCompatActivity() {
         addSpeedDialItem(speedDialView, R.id.fab_edit, R.drawable.ic_edit_white_48dp, "Edit")
         addSpeedDialItem(speedDialView, R.id.fab_email, R.drawable.ic_email_white_48dp, "Email")
         addSpeedDialItem(speedDialView, R.id.fab_settings, R.drawable.ic_settings_white_48dp, "Settings")
+        addSpeedDialItem(speedDialView, R.id.fab_start_stop_recording,R.drawable.ic_undo_white_48dp, "Start/Stop Video")
 
         speedDialView.setOnActionSelectedListener { speedDialActionItem ->
             when (speedDialActionItem.id) {
@@ -41,6 +43,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.fab_settings -> {
                     showSettingsDialog()
+                    false
+                }
+                R.id.fab_start_stop_recording -> {
+                    Feedbackt.startStopCapture(this)
                     false
                 }
                 else -> true
@@ -98,5 +104,10 @@ class MainActivity : AppCompatActivity() {
             override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { onTextChanged(p0.toString())}
             override fun afterTextChanged(editable: Editable?) {}
         })
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        Feedbackt.onActivityResult(requestCode, resultCode, data)
     }
 }

@@ -1,4 +1,5 @@
 <resources>
     <item type="id" name="fab_email" />
     <item type="id" name="fab_edit" />
+    <item type="id" name="fab_settings" />
 </resources>

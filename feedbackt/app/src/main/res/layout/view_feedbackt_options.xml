@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout style="@style/setting_linear_layout">
+        <TextView style="@style/setting_label" android:text="Send to"/>
+        <RelativeLayout style="@style/setting_value">
+            <EditText
+                android:id="@+id/send_to_email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="email"/>
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout style="@style/setting_linear_layout">
+        <TextView style="@style/setting_label" android:text="Email subject"/>
+        <RelativeLayout style="@style/setting_value">
+            <EditText
+                android:id="@+id/email_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout style="@style/setting_linear_layout">
+        <TextView style="@style/setting_label" android:text="Email content"/>
+        <RelativeLayout style="@style/setting_value">
+            <EditText
+                android:id="@+id/email_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout style="@style/setting_linear_layout">
+        <TextView style="@style/setting_label" android:text="Add device info" />
+
+        <RelativeLayout style="@style/setting_value">
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/add_device_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <LinearLayout style="@style/setting_linear_layout">
+        <TextView style="@style/setting_label" android:text="Add edit action info" />
+
+        <RelativeLayout style="@style/setting_value">
+            <com.google.android.material.checkbox.MaterialCheckBox
+                android:id="@+id/add_edit_action_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </RelativeLayout>
+    </LinearLayout>
+
+    <!-- to do add mode -->
+
+</LinearLayout>

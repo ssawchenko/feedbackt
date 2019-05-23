@@ -20,68 +20,65 @@
         android:layout_height="50dp"
         android:orientation="horizontal">
 
-        <View
-            android:layout_width="@dimen/border_thickness"
-            android:layout_height="match_parent"
-            android:background="@color/darkGrey" />
-
-        <RadioGroup
-            android:id="@+id/mode_selection_radio_group"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="2"
-            android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/drawing_mode_button"
-                style="@style/RadioButtonImageOnly"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:drawableTop="@drawable/baseline_edit_white_24" />
-
-            <RadioButton
-                android:id="@+id/number_mode_button"
-                style="@style/RadioButtonImageOnly"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:drawableTop="@drawable/baseline_add_circle_white_24" />
-
-        </RadioGroup>
-
-        <View
-            android:layout_width="@dimen/border_thickness"
-            android:layout_height="match_parent"
-            android:background="@color/darkGrey" />
-
         <RelativeLayout
-            android:id="@+id/undo_button"
+            android:id="@+id/undo_button_layout"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="#aaaaaa">
+            android:background="@drawable/selector_undo_redo_button_background">
 
-            <ImageView
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:src="@drawable/baseline_undo_white_24" />
+                android:text="@string/undo"
+                android:textAllCaps="true"
+                android:textColor="@color/darkGrey" />
 
         </RelativeLayout>
 
+        <View
+            android:layout_width="@dimen/border_thickness"
+            android:layout_height="match_parent"
+            android:background="@color/darkGrey" />
+
         <RelativeLayout
-            android:id="@+id/redo_button"
+            android:id="@+id/redo_button_layout"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="#aaaaaa">
+            android:background="@drawable/selector_undo_redo_button_background">
 
-            <ImageView
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:src="@drawable/baseline_redo_white_24" />
+                android:text="@string/redo"
+                android:textAllCaps="true"
+                android:textColor="@color/darkGrey" />
+
+        </RelativeLayout>
+
+        <View
+            android:layout_width="@dimen/border_thickness"
+            android:layout_height="match_parent"
+            android:background="@color/darkGrey" />
+
+        <RelativeLayout
+            android:id="@+id/clear_button_layout"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="2"
+            android:background="@drawable/selector_undo_redo_button_background">
+
+            <TextView
+                android:id="@+id/clear_button_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="@string/clear"
+                android:textAllCaps="true"
+                android:textColor="@color/darkGrey" />
         </RelativeLayout>
 
         <View
@@ -107,11 +104,13 @@
 
         <ImageView
             android:id="@+id/original_image"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter"
             android:layout_centerInParent="true"
             android:adjustViewBounds="true"
-            android:src="@drawable/sample_screen" />
+            android:src="@drawable/sample_screen"
+            tools:background="#ff0000"/>
 
         <com.steamclock.feedbackt.customcanvas.CustomCanvasView
             android:id="@+id/custom_canvas_view"
@@ -132,7 +131,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@color/colorPrimary"
-            android:text="Send it"
+            android:text="@string/send_it"
             android:textColor="#fff" />
 
     </LinearLayout>

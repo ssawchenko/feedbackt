@@ -9,6 +9,7 @@ import com.steamclock.feedbackt.R
 import com.steamclock.feedbackt.customcanvas.CanvasProxy
 import com.steamclock.feedbackt.extensions.*
 import kotlinx.android.synthetic.main.view_numbered_action.view.*
+import java.lang.StringBuilder
 import java.util.*
 
 class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int = Color.RED): CanvasAction(canvasProxy) {
@@ -25,8 +26,7 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
     private var paint: Paint = Paint()
     private val numberedViewSize = 30.px
     private val placementOffset = numberedViewSize / 2
-    private val numberedView: View =
-        LayoutInflater.from(context).inflate(R.layout.view_numbered_action, null)
+    private val numberedView: View = LayoutInflater.from(context).inflate(R.layout.view_numbered_action, null)
 
     init {
         paint.isAntiAlias = true
@@ -44,19 +44,17 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
     override fun onTouchStart(x: Float, y: Float) {
         lastTouchX = x
         lastTouchY = y
-
-        val startBitmap = createNextBitmap()
-        undoItems.add(PlacedBitmap(startBitmap, lastTouchX, lastTouchY))
     }
 
     override fun onTouchMove(x: Float, y: Float) {
         lastTouchX = x
         lastTouchY = y
-        updateNextBitmap(x, y)
     }
 
     override fun onTouchUp(canvas: Canvas) {
         // Indicate to the canvas that we are complete.
+        val startBitmap = createNextBitmap()
+        undoItems.add(PlacedBitmap(startBitmap, lastTouchX, lastTouchY))
         canvasProxy.addAction(this)
     }
 
@@ -86,6 +84,27 @@ class NumberedAction(context: Context, canvasProxy: CanvasProxy, lineColor: Int 
     override fun clearRedo() {
         redoItems.clear()
         nextNum = undoItems.size + 1
+    }
+
+    override fun clearAll() {
+        undoItems.clear()
+        redoItems.clear()
+        nextNum = 1
+    }
+
+    override fun emailContent(): String? {
+        val numberOfBullets = undoItems.count()
+        if (numberOfBullets == 0) {
+            return null
+        }
+
+        val contentBuilder = StringBuilder()
+        contentBuilder.appendln("--- Details by Number ---")
+        for (i in 1..numberOfBullets) {
+            contentBuilder.appendln("$i: ")
+        }
+
+        return contentBuilder.toString()
     }
 
     //-------------------------------------------

@@ -5,8 +5,8 @@
 
     <application>
         <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="@string/file_provider_authority"
+            android:name=".utils.FeedbacktFileProvider"
+            android:authorities="${applicationId}.feedbackt.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

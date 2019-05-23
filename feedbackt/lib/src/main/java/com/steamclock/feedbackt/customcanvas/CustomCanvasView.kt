@@ -7,8 +7,10 @@ import android.util.AttributeSet
 import android.util.Log
 import android.view.View
 import com.steamclock.feedbackt.customcanvas.actions.CanvasAction
+import com.steamclock.feedbackt.customcanvas.actions.FusedAction
 import com.steamclock.feedbackt.customcanvas.actions.NumberedAction
 import com.steamclock.feedbackt.customcanvas.actions.PathAction
+import kotlinx.android.synthetic.main.content_edit_feedbackt.view.*
 import java.lang.Exception
 import java.util.*
 
@@ -16,29 +18,45 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
                                                  attrs: AttributeSet? = null,
                                                  defStyleAttr: Int = 0) : View(context, attrs, defStyleAttr) {
 
+    enum class Mode {
+        None,
+        Drawing,            // Lines only
+        NumberedBullets,    // Numbers only
+        Fused               // Path (draw) and numbers (tap) together
+    }
+
+    interface CanvasListener {
+        fun onUndoValueChange(count: Int)
+        fun onRedoValueChange(count: Int)
+    }
+
+    var canvasListener: CanvasListener? = null
+    set(value) {
+        field = value
+        reportUndoRedoChanges()
+    }
+
     private var canvasUndoActions = LinkedList<CanvasAction>()
     private var canvasRedoActions = LinkedList<CanvasAction>()
 
     private var pathActions: PathAction
     private var numberedAction: NumberedAction
+    private var fusedAction: FusedAction
+
     private var activeAction: CanvasAction? = null
 
     private var canvas: Canvas? = null
     private var bitmap: Bitmap? = null
     private val bitmapPaint: Paint
 
-    enum class Mode {
-        Drawing,
-        NumberedBullets
-    }
-
-
     var mode: Mode = Mode.Drawing
         set(value) {
             field = value
             activeAction = when(field) {
+                Mode.None -> null
                 Mode.Drawing -> pathActions
                 Mode.NumberedBullets -> numberedAction
+                Mode.Fused -> fusedAction
             }
         }
 
@@ -49,17 +67,20 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         override fun addAction(action: CanvasAction) {
             log("Adding ${action.javaClass.name} to action list")
             canvasUndoActions.add(action)
+            reportUndoRedoChanges()
         }
     }
 
     init {
         pathActions = PathAction(canvasProxy)
         numberedAction = NumberedAction(context, canvasProxy)
+        fusedAction = FusedAction(context, canvasProxy)
+
         bitmapPaint = Paint(Paint.DITHER_FLAG)
         setWillNotDraw(false)
 
         // Setup default drawing mode
-        mode = Mode.Drawing
+        mode = Mode.Fused
     }
 
     fun undo() {
@@ -68,6 +89,7 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
             log("Calling undo for ${lastAction.javaClass.name}")
             lastAction.undo()
             canvasRedoActions.add(lastAction)
+            reportUndoRedoChanges()
         } catch (e: Exception) {
             // shhhhhhhh, it's ok.
         }
@@ -81,11 +103,36 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
             log("Calling redo for ${lastAction.javaClass.name}")
             lastAction.redo()
             canvasUndoActions.add(lastAction)
+            reportUndoRedoChanges()
         } catch (e: Exception) {
             // shhhhhhhh, it's ok.
         }
 
         invalidate()
+    }
+
+    fun clear() {
+        // Clear common undo/redo
+        canvasUndoActions.clear()
+        canvasRedoActions.clear()
+
+        // Clear specific actions
+        pathActions.clearAll()
+        numberedAction.clearAll()
+        fusedAction.clearAll()
+
+        // Update canvas and report back
+        invalidate()
+        reportUndoRedoChanges()
+    }
+
+    fun getEmailContent(): String? {
+        return when(mode) {
+            Mode.None -> null
+            Mode.Drawing -> pathActions.emailContent()
+            Mode.NumberedBullets -> numberedAction.emailContent()
+            Mode.Fused -> fusedAction.emailContent()
+        }
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -136,6 +183,7 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
     private fun drawAll(canvas: Canvas) {
         pathActions.draw(canvas)
         numberedAction.draw(canvas)
+        fusedAction.draw(canvas)
     }
 
     private fun clearRedo() {
@@ -146,6 +194,14 @@ class CustomCanvasView @JvmOverloads constructor(context: Context,
         // Clear action stacks
         pathActions.clearRedo()
         numberedAction.clearRedo()
+        fusedAction.clearRedo()
+
+        reportUndoRedoChanges()
+    }
+
+    private fun reportUndoRedoChanges() {
+        canvasListener?.onUndoValueChange(canvasUndoActions.size)
+        canvasListener?.onRedoValueChange(canvasRedoActions.size)
     }
 
     companion object {

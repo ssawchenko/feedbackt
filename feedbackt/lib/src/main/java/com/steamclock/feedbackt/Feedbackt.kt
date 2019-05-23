@@ -27,6 +27,7 @@ import com.steamclock.feedbackt.extensions.*
 import android.content.Context.WINDOW_SERVICE
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
+import android.media.CamcorderProfile
 import android.media.MediaRecorder
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
@@ -581,15 +582,40 @@ object Feedbackt {
         Log.v("Video", "initRecorder")
         if (mediaRecorder == null) {
 
+            val profile = CamcorderProfile.get(CamcorderProfile.QUALITY_480P)
             val recorder = MediaRecorder()
             recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
+
+
+            val smallWidth = 480
+            val smallHeight = 640
+
+            val displayWidth = displayMetrics?.widthPixels ?: 480
+            val displayHeight = displayMetrics?.heightPixels ?: 640
+
+            val profileWidth = profile.videoFrameWidth //displayMetrics?.widthPixels ?: 480
+            val profileHeight = profile.videoFrameHeight //displayMetrics?.heightPixels ?: 640
+
+            val screenWidth = smallWidth
+            val screenHeight = smallHeight
+
+            // Use profile
+//            recorder.setOutputFormat(profile.fileFormat)
+//            recorder.setVideoFrameRate(profile.videoFrameRate)
+//            recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight)
+//            recorder.setVideoEncodingBitRate(profile.videoBitRate)
+//            recorder.setVideoEncoder(profile.videoCodec)
+
+            // Use manual setup
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264)
             recorder.setVideoEncodingBitRate(512 * 1000)
             recorder.setVideoFrameRate(30)
-            recorder.setVideoSize(1000, 1000)
+            recorder.setVideoSize(screenWidth, screenHeight) // Call after setVideoSource
+
             currentVideoFilePath = createMovieFilePath("capture")
             recorder.setOutputFile(currentVideoFilePath)
+            // Do all ^ before calling prepare()
 
             try {
                 recorder.prepare()
@@ -600,11 +626,10 @@ object Feedbackt {
 
             mediaProjectionCallback = MediaProjectionCallback()
             mediaProjection?.registerCallback(mediaProjectionCallback, null)
-
             mediaProjection?.createVirtualDisplay(
                 "FeedbacktRecording",
-                displayMetrics?.widthPixels ?: 480,
-                displayMetrics?.heightPixels ?: 640,
+                screenWidth,
+                screenHeight,
                 displayMetrics?.densityDpi ?: DisplayMetrics.DENSITY_HIGH,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 recorder.surface, null, null
@@ -627,7 +652,12 @@ object Feedbackt {
         isCapturing = false
         mediaRecorder?.stop()
         mediaRecorder?.reset()
+        mediaRecorder?.release()
+        mediaRecorder = null
+
         virtualDisplay?.release()
+        virtualDisplay = null
+
         emailVideo()
     }
 
@@ -658,31 +688,4 @@ object Feedbackt {
 
         currentActivity?.get()?.startActivity(Intent.createChooser(emailIntent, "Send email"))
     }
-
-    private fun createEmailWithVideo(text: String?): (context: Context, uri: Uri) -> Unit {
-        val stringBuilder = StringBuilder()
-        stringBuilder.appendln(generateGreetingText())
-        stringBuilder.append("")
-        if (addActionContent) stringBuilder.appendln(text)
-        if (addDeviceInfo) stringBuilder.appendln(generateDeviceDetailsText())
-        if (emailContent != null) stringBuilder.appendln(emailContent)
-        val messageText = stringBuilder.toString()
-
-        return { context, uri ->
-            hideHud()
-            val emailIntent = Intent(Intent.ACTION_SEND)
-
-            emailIntent.type = "image/png"
-
-            if (email != null) emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
-            emailIntent.putExtra(Intent.EXTRA_SUBJECT, emailTitle)
-            emailIntent.putExtra(Intent.EXTRA_TEXT, messageText)
-            emailIntent.putExtra(Intent.EXTRA_STREAM, uri)
-
-            emailIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-            emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            context.startActivity(Intent.createChooser(emailIntent, "Send email"))
-        }
-    }
-
 }

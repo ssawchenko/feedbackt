@@ -33,6 +33,7 @@ import android.media.projection.MediaProjectionManager
 import android.os.Environment
 import android.util.DisplayMetrics
 import android.view.WindowManager
+import com.steamclock.feedbackt.utils.FeedbacktFileProvider
 import java.io.File
 import java.lang.Exception
 
@@ -516,6 +517,8 @@ object Feedbackt {
     }
 
     fun startCapture(activity: Activity) {
+        currentActivity = WeakReference(activity)
+
         Log.v("Video", "startCapture")
         // Initialize what we can
         getDisplayMetrics(activity)
@@ -573,6 +576,7 @@ object Feedbackt {
         }
     }
 
+    private var currentVideoFilePath: String? = null
     private fun initRecorder(): Boolean {
         Log.v("Video", "initRecorder")
         if (mediaRecorder == null) {
@@ -584,7 +588,8 @@ object Feedbackt {
             recorder.setVideoEncodingBitRate(512 * 1000)
             recorder.setVideoFrameRate(30)
             recorder.setVideoSize(1000, 1000)
-            recorder.setOutputFile(createMovieFilePath("capture"))
+            currentVideoFilePath = createMovieFilePath("capture")
+            recorder.setOutputFile(currentVideoFilePath)
 
             try {
                 recorder.prepare()
@@ -623,6 +628,7 @@ object Feedbackt {
         mediaRecorder?.stop()
         mediaRecorder?.reset()
         virtualDisplay?.release()
+        emailVideo()
     }
 
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -634,42 +640,49 @@ object Feedbackt {
         }
     }
 
-//    fun startCapture(activity: Activity) {
-//        if (!hasOverlayPermissions(activity)) {
-//            requestOverlayPermissions(activity)
-//            return
-//        }
-//
-//        val image = ImageView(activity)
-//        image.layoutParams = ViewGroup.LayoutParams(500, 500)
-//        val backGroundColor = activity.resources.getColor(R.color.primary_dark_material_dark)
-//        image.setBackgroundColor(backGroundColor)
-//
-////        params.width = 500
-////        params.height = 500
-////        params.width = ActionBar.LayoutParams.MATCH_PARENT
-////        params.type = WindowManager.LayoutParams.TYPE_PRIORITY_PHONE
-////        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS  or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-////        params.format = PixelFormat.TRANSLUCENT
-////        params.gravity = Gravity.CENTER or Gravity.LEFT
-//
-//        val wm = activity.getSystemService(WINDOW_SERVICE) as WindowManager
-//
-//        val layoutType= if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-//        } else {
-//            WindowManager.LayoutParams.TYPE_PHONE
-//        }
-//
-//        val params = WindowManager.LayoutParams(
-//            WindowManager.LayoutParams.WRAP_CONTENT,
-//            WindowManager.LayoutParams.WRAP_CONTENT,
-//            layoutType,
-//            WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-//            PixelFormat.TRANSLUCENT
-//        )
-//
-//        wm.addView(image, params)
-//    }
+    private fun emailVideo() {
+        Log.v("Video", "emailVideo")
+        val context = currentActivity?.get()?.applicationContext ?: return
+
+        val videoUri= FeedbacktFileProvider().getUriForFile(context, File(currentVideoFilePath))
+        val emailIntent = Intent(Intent.ACTION_SEND)
+
+        emailIntent.type = "audio/mpeg4-generic"
+
+        if (email != null) emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+        emailIntent.putExtra(Intent.EXTRA_SUBJECT, emailTitle)
+        emailIntent.putExtra(Intent.EXTRA_TEXT, generateGreetingText())
+        emailIntent.putExtra(Intent.EXTRA_STREAM, videoUri)
+        emailIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+        currentActivity?.get()?.startActivity(Intent.createChooser(emailIntent, "Send email"))
+    }
+
+    private fun createEmailWithVideo(text: String?): (context: Context, uri: Uri) -> Unit {
+        val stringBuilder = StringBuilder()
+        stringBuilder.appendln(generateGreetingText())
+        stringBuilder.append("")
+        if (addActionContent) stringBuilder.appendln(text)
+        if (addDeviceInfo) stringBuilder.appendln(generateDeviceDetailsText())
+        if (emailContent != null) stringBuilder.appendln(emailContent)
+        val messageText = stringBuilder.toString()
+
+        return { context, uri ->
+            hideHud()
+            val emailIntent = Intent(Intent.ACTION_SEND)
+
+            emailIntent.type = "image/png"
+
+            if (email != null) emailIntent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+            emailIntent.putExtra(Intent.EXTRA_SUBJECT, emailTitle)
+            emailIntent.putExtra(Intent.EXTRA_TEXT, messageText)
+            emailIntent.putExtra(Intent.EXTRA_STREAM, uri)
+
+            emailIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(Intent.createChooser(emailIntent, "Send email"))
+        }
+    }
 
 }

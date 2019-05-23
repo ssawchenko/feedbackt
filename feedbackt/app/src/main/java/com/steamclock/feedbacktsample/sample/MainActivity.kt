@@ -14,6 +14,7 @@ import com.leinardi.android.speeddial.SpeedDialView
 import com.steamclock.feedbacktsample.R
 import kotlinx.android.synthetic.main.activity_main.*
 import com.steamclock.feedbackt.Feedbackt
+import kotlinx.android.synthetic.main.fragment_main.*
 import kotlinx.android.synthetic.main.view_feedbackt_options.view.*
 
 class MainActivity : AppCompatActivity() {
@@ -51,6 +52,11 @@ class MainActivity : AppCompatActivity() {
                 }
                 else -> true
             }
+        }
+
+        next_page_button.setOnClickListener {
+            val intent = Intent(this@MainActivity, MainActivity::class.java)
+            startActivity(intent)
         }
 
     }

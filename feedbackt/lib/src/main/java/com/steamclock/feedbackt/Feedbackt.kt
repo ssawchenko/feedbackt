@@ -19,9 +19,6 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import com.steamclock.feedbackt.activities.EditFeedbacktActivity
-import com.steamclock.feedbackt.utils.DoAsync
-import com.steamclock.feedbackt.utils.ProgressHUD
-import com.steamclock.feedbackt.utils.ShakeDetector
 import java.lang.ref.WeakReference
 import com.steamclock.feedbackt.extensions.*
 import android.content.Context.WINDOW_SERVICE
@@ -34,9 +31,11 @@ import android.media.projection.MediaProjectionManager
 import android.os.Environment
 import android.util.DisplayMetrics
 import android.view.WindowManager
-import com.steamclock.feedbackt.utils.FeedbacktFileProvider
+import com.steamclock.feedbackt.utils.*
 import java.io.File
 import java.lang.Exception
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 /**
@@ -495,25 +494,38 @@ object Feedbackt {
     //-------------------------------
     // Video Capture
     //-------------------------------
+    enum class VideoCaptureState {
+        Idle,
+        Capturing,
+        Stopping
+    }
+
     private var projectionManager: MediaProjectionManager? = null
     private var mediaProjection: MediaProjection? = null
     private var mediaRecorder: MediaRecorder? = null
     private var virtualDisplay: VirtualDisplay? = null
     private var displayMetrics: DisplayMetrics? = null
     private var mediaProjectionCallback: MediaProjectionCallback? = null
+    private var videoCaptureState =  VideoCaptureState.Idle
 
     private class MediaProjectionCallback : MediaProjection.Callback() {
         override fun onStop() {
-            stopRecording()
+            mediaRecorder?.reset()
+            mediaRecorder?.release()
+            mediaRecorder = null
+
+            virtualDisplay?.release()
+            virtualDisplay = null
+
+            videoCaptureState = Feedbackt.VideoCaptureState.Idle
         }
     }
 
-    private var isCapturing = false
     fun startStopCapture(activity: Activity) {
-        if (isCapturing) {
-            stopRecording()
-        } else {
-            startCapture(activity)
+        when(videoCaptureState) {
+            Feedbackt.VideoCaptureState.Idle -> startCapture(activity)
+            Feedbackt.VideoCaptureState.Capturing -> stopRecording()
+            Feedbackt.VideoCaptureState.Stopping -> { /* Do nothing for now */ }
         }
     }
 
@@ -525,12 +537,8 @@ object Feedbackt {
         getDisplayMetrics(activity)
         projectionManager = activity.getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
-        // The rest will have to wait until we have permission...
-        if (mediaRecorder == null) {
-            requestScreenCapturePermission(activity)
-        } else {
-            startRecording()
-        }
+        // Must always request permission to record screen.
+        requestScreenCapturePermission(activity)
     }
 
     private fun getDisplayMetrics(activity: Activity) {
@@ -543,7 +551,7 @@ object Feedbackt {
     private fun createMovieFilePath(filename: String): String {
         Log.v("Video", "createMovieFilePath")
         val rootMovieDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
-        val feedbacktAlbumDir = File(rootMovieDir, "Feedbackt")
+        val feedbacktAlbumDir = File(rootMovieDir, "FeedbacktVideos")
 
         val saveDirectory = if (feedbacktAlbumDir.exists() || feedbacktAlbumDir.mkdirs()) {
             feedbacktAlbumDir
@@ -582,10 +590,8 @@ object Feedbackt {
         Log.v("Video", "initRecorder")
         if (mediaRecorder == null) {
 
-            val profile = CamcorderProfile.get(CamcorderProfile.QUALITY_480P)
             val recorder = MediaRecorder()
             recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE)
-
 
             val smallWidth = 480
             val smallHeight = 640
@@ -593,27 +599,23 @@ object Feedbackt {
             val displayWidth = displayMetrics?.widthPixels ?: 480
             val displayHeight = displayMetrics?.heightPixels ?: 640
 
+            val profile = CamcorderProfile.get(CamcorderProfile.QUALITY_480P)
             val profileWidth = profile.videoFrameWidth //displayMetrics?.widthPixels ?: 480
             val profileHeight = profile.videoFrameHeight //displayMetrics?.heightPixels ?: 640
 
             val screenWidth = smallWidth
             val screenHeight = smallHeight
 
-            // Use profile
-//            recorder.setOutputFormat(profile.fileFormat)
-//            recorder.setVideoFrameRate(profile.videoFrameRate)
-//            recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight)
-//            recorder.setVideoEncodingBitRate(profile.videoBitRate)
-//            recorder.setVideoEncoder(profile.videoCodec)
-
-            // Use manual setup
+            // Since we only want video, we cannot use setProfile unless we setAudioSource above.
+            // Use manual recorder setup, crappy resolution to keep file size small.
+            // Using larger screenWidth, screenHeight causes .stop() crash :/
             recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264)
             recorder.setVideoEncodingBitRate(512 * 1000)
             recorder.setVideoFrameRate(30)
             recorder.setVideoSize(screenWidth, screenHeight) // Call after setVideoSource
 
-            currentVideoFilePath = createMovieFilePath("capture")
+            currentVideoFilePath = createMovieFilePath(getMovieFileNameWithTimeStamp())
             recorder.setOutputFile(currentVideoFilePath)
             // Do all ^ before calling prepare()
 
@@ -643,22 +645,22 @@ object Feedbackt {
 
     private fun startRecording() {
         Log.v("Video", "startRecording")
-        isCapturing = true
+        videoCaptureState = Feedbackt.VideoCaptureState.Capturing
         mediaRecorder?.start()
     }
 
     private fun stopRecording() {
         Log.v("Video", "stopRecording")
-        isCapturing = false
         mediaRecorder?.stop()
-        mediaRecorder?.reset()
-        mediaRecorder?.release()
-        mediaRecorder = null
+        mediaProjection?.stop()
+        videoCaptureState = Feedbackt.VideoCaptureState.Stopping
 
-        virtualDisplay?.release()
-        virtualDisplay = null
+        // Force ACTION_MEDIA_SCANNER_SCAN_FILE intent to make the video viewable in gallery immediately.
+        val context = currentActivity?.get()?.applicationContext ?: return
+        val videoFile = File(currentVideoFilePath)
+        ExternalStorage.forceMediaScanOfFile(context, File(currentVideoFilePath))
 
-        emailVideo()
+        emailVideo(context, videoFile)
     }
 
     fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -670,11 +672,10 @@ object Feedbackt {
         }
     }
 
-    private fun emailVideo() {
+    private fun emailVideo(context: Context, videoFile: File) {
         Log.v("Video", "emailVideo")
-        val context = currentActivity?.get()?.applicationContext ?: return
 
-        val videoUri= FeedbacktFileProvider().getUriForFile(context, File(currentVideoFilePath))
+        val videoUri= FeedbacktFileProvider().getUriForFile(context, videoFile)
         val emailIntent = Intent(Intent.ACTION_SEND)
 
         emailIntent.type = "audio/mpeg4-generic"
@@ -687,5 +688,19 @@ object Feedbackt {
         emailIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
         currentActivity?.get()?.startActivity(Intent.createChooser(emailIntent, "Send email"))
+    }
+
+    private fun getMovieFileNameWithTimeStamp(): String {
+        val now = Calendar.getInstance().time
+        var fileName = "Feedbackt_ScreenRecording_"
+
+        fileName += try {
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault())
+            dateFormat.format(now)
+        } catch (e: java.lang.Exception) {
+            now.toString()
+        }
+
+        return fileName
     }
 }
